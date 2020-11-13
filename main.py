@@ -1,181 +1,101 @@
-# Import basic libraries
 import os
-import pandas as pd
 import numpy as np
-import seaborn as sns
-import matplotlib.pyplot as plt
+import pandas as pd
 
-import sklearn.preprocessing as skp
-import sklearn.model_selection as skm
-
-# import classification modules
-from sklearn.svm import SVC
+from sklearn.naive_bayes import GaussianNB
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
 
-# Selection
-from sklearn.model_selection import GridSearchCV as gs
-from sklearn.model_selection import RandomizedSearchCV as rs
-from sklearn.model_selection import StratifiedKFold
-from sklearn.feature_selection import RFECV
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import RepeatedStratifiedKFold
+from sklearn.base import clone
+from sklearn.preprocessing import StandardScaler
+from sklearn import preprocessing
+from sklearn.preprocessing import MinMaxScaler
 
-# Metrics
-from sklearn.metrics import accuracy_score, confusion_matrix,precision_score, recall_score, roc_auc_score,roc_curve, auc, f1_score
-import sklearn.metrics as metrics
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import chi2
+
+from keel import load_dataset, find_datasets
+from chi_square import ChiSquare
+from scipy.stats import rankdata
+
+DATASETS_DIR = os.path.join(os.path.realpath(os.path.dirname(__file__)), 'datasets')
+
+classifiers = {
+    'GNB': GaussianNB(),
+    'SVM': SVC(),
+    'kNN': KNeighborsClassifier(),
+    'CART': DecisionTreeClassifier(random_state=10),
+}
+
+# n_datasets = len(datasets)
+n_datasets = 3
+n_splits = 5
+n_repeats = 2
+rskf = RepeatedStratifiedKFold(n_splits=n_splits, n_repeats=n_repeats, random_state=1234)
+
+scores = np.zeros((len(classifiers), n_datasets, n_splits * n_repeats))
+
+for data_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
+    print(f"Dataset: {dataset}")
+    X, y = load_dataset(dataset, return_X_y=True, storage=DATASETS_DIR)
+    # X = StandardScaler().fit_transform(X, y)
+    # normalization - transform data to [0, 1]
+    X = MinMaxScaler().fit_transform(X, y)
+
+    # Get feature names
+    with open('datasets/%s/%s-header.txt' % (dataset, dataset), 'rt') as file:
+        header = file.read()
+        a, feature_names = header.split("@inputs ")
+        feature_names = feature_names.split("\n")
+        del feature_names[-2:]
+        feature_names = feature_names[0].split(', ')
+
+    # # Two features with highest chi-squared statistics are selected
+    # chi2_features = SelectKBest(chi2, k=2)
+    # X_kbest_features = chi2_features.fit_transform(X, y)
+    # # Reduced features
+    # print('Original feature number:', X.shape[1])
+    # print('Reduced feature number:', X_kbest_features.shape[1])
+
+    # Feature Selection with Chi square
+    X_df = pd.DataFrame(X)
+    X_df.columns = feature_names
+    X_df['class'] = y
+    y_df = pd.DataFrame(y)
+    chi_sq = ChiSquare(X_df)
+    for col in feature_names:
+        chi_sq.TestIndependence(colX=col, colY='class')
+    f_df = chi_sq.select_features(feature_names)
+    print("Selected features:")
+    print(f_df)
+    # Jak wyjąć i stworzyć zestaw cech, na którym potem bdmy trenować clfs?
+
+    for fold_id, (train, test) in enumerate(rskf.split(X, y)):
+        X_train, X_test = X[train], X[test]
+        y_train, y_test = y[train], y[test]
+        for clf_id, clf_name in enumerate(classifiers):
+
+            clf = clone(classifiers[clf_name])
+            clf.fit(X_train, y_train)
+            y_pred = clf.predict(X_test)
+            scores[clf_id, data_id, fold_id] = accuracy_score(y_test, y_pred)
 
 
-# Loading Dataset
-missing = ["na", "--", ".", ".."]
-hepatitis_data = pd.read_csv("data/hepatitis.csv", na_values=missing)
-# print(hepatitis_data.head())
-# print(hepatitis_data.isnull().sum()) # Checking for nulls
-hepatitis_data["class"].replace((1, 2), (0, 1), inplace=True)
-hepatitis_data["class"] = hepatitis_data["class"].astype("bool")
-# print(hepatitis_data.describe())
 
-# Discretization of age Column
-# hepatitis_data["age"]=np.where((hepatitis_data["age"]>10) & (hepatitis_data["age"]<20),"Teenagers",
-#                    np.where((hepatitis_data["age"]>=20) & (hepatitis_data["age"]<=30),"Adults",
-#                    np.where((hepatitis_data["age"]>30) & (hepatitis_data["age"]<=40),"Middle aged",np.where((hepatitis_data["age"]<=10),"Children",
-#                             "Old"))))
-# hepatitis_data["age"]=pd.Categorical(hepatitis_data.age,["Children",'Teenagers','Adults', 'Middle aged', 'Old'],ordered=True)
-# hepatitis_data["age"].value_counts()
-# sns.barplot(x="age", y="class", data=hepatitis_data)
-# plt.show()
+np.save('results_new', scores)
+scores = np.load('results_new.npy')
+print("\nScores:\n", scores.shape)
 
-hepatitis_data["sex"].replace((1, 2), ("male", "female"), inplace=True)
-hepatitis_data["sex"] = pd.Categorical(hepatitis_data.sex, ["male", 'female'], ordered=False)
+mean_scores = np.mean(scores, axis=2).T
+print("\nMean scores:\n", mean_scores)
 
-# Dropping all nulls
-hepatitis_data.dropna(inplace=True)
-# print(hepatitis_data.dtypes)
-
-# We have categorical variables .getdummies seperates the different categories of categorical variables as separate binary columns
-hepatitis_data1 = pd.get_dummies(hepatitis_data, drop_first=True)
-# List of new columns
-# print(hepatitis_data1.columns)
-# print(hepatitis_data1.head(5))
-
-hepatitis_data1["bilirubin"] = np.abs((hepatitis_data1["bilirubin"]-hepatitis_data1["bilirubin"].mean())/(hepatitis_data1["bilirubin"].std()))
-hepatitis_data1["albumin"] = np.abs((hepatitis_data1["albumin"]-hepatitis_data1["albumin"].mean())/(hepatitis_data1["albumin"].std()))
-
-y = hepatitis_data1["class"].copy()
-X = hepatitis_data1.drop(columns=["class"])
-# print(y.shape)
-# print(X.shape)
-
-# Random Forest method for feature selection
-# =============
-model = RandomForestClassifier()
-# Get the feature importance with simple steps:
-X_features = X.columns
-model.fit(X, y)
-# display the relative importance of each attribute
-importances = np.around(model.feature_importances_, decimals=4)
-imp_features = model.feature_importances_
-feature_array = np.array(X_features)
-sorted_features = pd.DataFrame(list(zip(feature_array, imp_features))).sort_values(by=1, ascending=False)
-data_top = sorted_features[:X.shape[1]]
-feature_to_rem = sorted_features[X.shape[1]:]
-# print("Unimportant Columms after simple Random Forrest\n",feature_to_rem)
-rem_index = list(feature_to_rem.index)
-# print(rem_index)
-# print("Important Columms after simple Random Forrest\n",data_top)
-data_top_index = list(data_top.index)
-# print("Important Columms after simple Random Forrest\n",data_top_index )
-# print(importances)
-X_randfor_sel = X.drop(X.columns[rem_index], axis=1)
-features_randfor_select = X_randfor_sel.columns
-# print(features_randfor_select)
-
-# Create train-test split parts for manual split
-# ===============
-trainX, testX, trainy, testy = skm.train_test_split(X, y, test_size=0.25, random_state=99)  # explain random state
-print("\n shape of train split: ")
-print(trainX.shape, trainy.shape)
-print("\n shape of train split: ")
-print(testX.shape, testy.shape)
-# Making X Scalar for ML algorithms
-X = skp.StandardScaler().fit(X).transform(X)
-
-# Support Vector Machine Algorithm
-# ========
-svm = clf = SVC(gamma="auto", kernel='poly', degree=3)
-svm.fit(trainX, trainy)
-predictions = svm.predict(testX)
-accsvm = accuracy_score(testy, predictions)*100
-# print("Accuracy of Support Vector Machine (%): \n", accsvm)
-fprsvm, tprsvm, _ = roc_curve(testy, predictions)
-aucsvm = auc(fprsvm, tprsvm)*100
-# print("AUC OF Support Vector Machine (%): \n", aucsvm)
-recallsvm = recall_score(testy, predictions)*100
-# print("Recall of Support Vector Machine is: \n",recallsvm)
-precsvm = precision_score(testy, predictions)*100
-# print("Precision of Support Vector Machine is: \n",precsvm)
-
-# Decision Tree Classifier
-# ==============
-dt = DecisionTreeClassifier(max_depth=10, criterion="gini")
-dt.fit(trainX, trainy)
-predictions = dt.predict(testX)
-accdt = accuracy_score(testy, predictions)*100
-# print("Accuracy of Decision Tree (%): \n",accdt)
-fprdt, tprdt, _ = roc_curve(testy, predictions)
-aucdt = auc(fprdt, tprdt)*100
-# print("AUC OF Decision Tree (%): \n",aucdt)
-recalldt = recall_score(testy, predictions)*100
-# print("Recall of Decision Tree is: \n",recalldt)
-precdt = precision_score(testy, predictions)*100
-# print("Precision of Decision Tree is: \n",precdt)
-
-# Comparison
-# ===========
-algos = ["Support Vector Machine", "Decision Tree"]
-acc = [accsvm, accdt]
-auc = [aucsvm, aucdt]
-recall = [recallsvm, recalldt]
-prec = [precsvm, precdt]
-comp = {"Algorithms": algos, "Accuracies": acc, "Area Under the Curve": auc, "Recall": recall, "Precision": prec}
-compdf = pd.DataFrame(comp)
-print(compdf)
-print("cos1")
-# ROC
-# =======
-roc_auc1 = metrics.auc(fprsvm, tprsvm)
-roc_auc2 = metrics.auc(fprdt, tprdt)
-plt.figure(figsize=(20, 10))
-print("cos2")
-plt.plot(fprsvm, tprsvm, "k", label="ROC of SVM = %0.2f" % roc_auc1)
-plt.plot(fprdt, tprdt, "m", label="ROC of Descision Tree= %0.2f" % roc_auc2)
-plt.rcParams.update({'font.size': 16})
-plt.legend(loc="lower right")
-plt.plot([0, 1], [0, 1], "r--")
-plt.xlim([0, 1])
-plt.ylim([0, 1])
-plt.ylabel("True Positive Rate")
-plt.xlabel("False Positive Rate")
-plt.rc('axes', labelsize=15)
-plt.rc('axes', titlesize=22)
-# plt.show()
-
-# Tune hyper parameters of DTC
-# Decision Tree with random search
-parameters = {"min_samples_split": range(10, 200, 10), "max_depth": range(1, 20, 1)}
-clf_treers = DecisionTreeClassifier()
-clfrs = rs(clf_treers, parameters, cv=5, scoring="precision")
-clfrs.fit(trainX, trainy)
-predictions = clfrs.predict(testX)
-accdtrs = accuracy_score(testy, predictions)*100
-print("Accuracy of Decision Tree after Hyperparameter Tuning (%): \n", accdtrs)
-fprdtrs, tprdtrs, _ = roc_curve(testy, predictions)
-recalldtrs = recall_score(testy, predictions)*100
-print("Recall of Decision Tree after Hyperparameter Tuning is: \n", recalldtrs)
-precdtrs = precision_score(testy, predictions)*100
-print("Precision of Decision Tree after Hyperparameter Tuning is: \n", precdtrs)
-
-# examnine the best model
-# single best score achieved accross all params
-print("Best Score (%): \n", clfrs.best_score_*100)
-# Dictionary Containing the parameters
-print("Best Parameters: \n", clfrs.best_params_)
-print("Best Estimators: \n", clfrs.best_estimator_)
+# ranks = []
+# for ms in mean_scores:
+#     ranks.append(rankdata(ms).tolist())
+# ranks = np.array(ranks)
+# print("\nRanks:\n", ranks)
+# mean_ranks = np.mean(ranks, axis=0)
+# print("\nMean ranks:\n", mean_ranks)
