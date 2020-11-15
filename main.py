@@ -37,6 +37,7 @@ n_repeats = 2
 rskf = RepeatedStratifiedKFold(n_splits=n_splits, n_repeats=n_repeats, random_state=1234)
 
 scores = np.zeros((len(classifiers), n_datasets, n_splits * n_repeats))
+scores_chi2 = np.zeros((len(classifiers), n_datasets, n_splits * n_repeats))
 
 for data_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
     print(f"Dataset: {dataset}")
@@ -60,6 +61,17 @@ for data_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
     # print('Original feature number:', X.shape[1])
     # print('Reduced feature number:', X_kbest_features.shape[1])
 
+    # Original data
+    for fold_id, (train, test) in enumerate(rskf.split(X, y)):
+        X_train, X_test = X[train], X[test]
+        y_train, y_test = y[train], y[test]
+
+        for clf_id, clf_name in enumerate(classifiers):
+            clf = clone(classifiers[clf_name])
+            clf.fit(X_train, y_train)
+            y_pred = clf.predict(X_test)
+            scores[clf_id, data_id, fold_id] = accuracy_score(y_test, y_pred)
+
     # Feature Selection with Chi square
     X_df = pd.DataFrame(X)
     X_df.columns = feature_names
@@ -68,29 +80,33 @@ for data_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
     chi_sq = ChiSquare(X_df)
     for col in feature_names:
         chi_sq.TestIndependence(colX=col, colY='class')
-    f_df = chi_sq.select_features(feature_names)
-    print("Selected features:")
-    print(f_df)
-    # Jak wyjąć i stworzyć zestaw cech, na którym potem bdmy trenować clfs?
+    selected_features = chi_sq.features
+    X_df_selected = X_df[selected_features]
+    X_selected = X_df_selected.to_numpy()
 
-    for fold_id, (train, test) in enumerate(rskf.split(X, y)):
-        X_train, X_test = X[train], X[test]
+    for fold_id, (train, test) in enumerate(rskf.split(X_selected, y)):
+        X_train, X_test = X_selected[train], X_selected[test]
         y_train, y_test = y[train], y[test]
-        for clf_id, clf_name in enumerate(classifiers):
 
+        for clf_id, clf_name in enumerate(classifiers):
             clf = clone(classifiers[clf_name])
             clf.fit(X_train, y_train)
             y_pred = clf.predict(X_test)
-            scores[clf_id, data_id, fold_id] = accuracy_score(y_test, y_pred)
+            scores_chi2[clf_id, data_id, fold_id] = accuracy_score(y_test, y_pred)
 
-
+print(classifiers.keys())
 
 np.save('results_new', scores)
 scores = np.load('results_new.npy')
-print("\nScores:\n", scores.shape)
-
+# print("\nScores:\n", scores.shape)
 mean_scores = np.mean(scores, axis=2).T
 print("\nMean scores:\n", mean_scores)
+
+np.save('results_chi2', scores_chi2)
+scores = np.load('results_chi2.npy')
+# print("\nScores Chi2:\n", scores_chi2.shape)
+mean_scores_chi2 = np.mean(scores_chi2, axis=2).T
+print("\nMean scores Chi2:\n", mean_scores_chi2)
 
 # ranks = []
 # for ms in mean_scores:
