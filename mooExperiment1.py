@@ -12,21 +12,22 @@ from sklearn.base import clone
 from sklearn.preprocessing import MinMaxScaler
 
 from keel import load_dataset, find_datasets
-from mooclf import MooClf
+from methods.mooclf import MooClf
+from methods.clfchi2 import ClfChi2
 
 DATASETS_DIR = os.path.join(os.path.realpath(os.path.dirname(__file__)), 'datasets')
 
 base_classifiers = {
-    'GNB': GaussianNB(),
-    'SVM': SVC(),
+    # 'GNB': GaussianNB(),
+    # 'SVM': SVC(),
     'kNN': KNeighborsClassifier(),
-    'CART': DecisionTreeClassifier(random_state=10),
+    # 'CART': DecisionTreeClassifier(random_state=10),
 }
 
 methods = {}
 for key, base in base_classifiers.items():
     methods['MOO-{}'.format(key)] = MooClf(base, objectives=1, scale_features = 0.7, test_size=0.2)
-    # methods['Chi2-{}'.format(key)] =
+    methods['Chi2-{}'.format(key)] = ClfChi2(base)
 
 n_datasets = 5
 n_splits = 5
