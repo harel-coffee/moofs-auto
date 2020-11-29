@@ -10,35 +10,34 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import RepeatedStratifiedKFold
 from sklearn.base import clone
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.feature_selection import chi2
 
 from keel import load_dataset, find_datasets
 from methods.mooclf import MooClf
-from methods.clfchi2 import ClfChi2
+from methods.fsclf import FSClf
 
 DATASETS_DIR = os.path.join(os.path.realpath(os.path.dirname(__file__)), 'datasets')
 
 base_classifiers = {
-    # 'GNB': GaussianNB(),
-    # 'SVM': SVC(),
+    'GNB': GaussianNB(),
+    'SVM': SVC(),
     'kNN': KNeighborsClassifier(),
-    # 'CART': DecisionTreeClassifier(random_state=10),
+    'CART': DecisionTreeClassifier(random_state=10),
 }
 
 methods = {}
+scale_features = 0.7
 for key, base in base_classifiers.items():
-    methods['MOO-{}'.format(key)] = MooClf(base, objectives=1, scale_features = 0.7, test_size=0.2)
-    methods['Chi2-{}'.format(key)] = ClfChi2(base)
+    methods['MOO-{}'.format(key)] = MooClf(base, scale_features, objectives=1, test_size=0.2)
+    methods['SF-{}'.format(key)] = FSClf(base, chi2, scale_features)
 
 n_datasets = 5
 n_splits = 5
 n_repeats = 2
 rskf = RepeatedStratifiedKFold(n_splits=n_splits, n_repeats=n_repeats, random_state=1234)
 
-# scores = np.zeros((len(methods), n_datasets, n_splits * n_repeats))
-
 for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
     scores = np.zeros((len(methods), n_splits * n_repeats))
-    # scores = {}
     print(f"Dataset: {dataset}")
     X, y = load_dataset(dataset, return_X_y=True, storage=DATASETS_DIR)
     # Normalization - transform data to [0, 1]
@@ -53,7 +52,6 @@ for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
         feature_names = feature_names[0].split(', ')
     print(feature_names)
 
-    # Original data
     for fold_id, (train, test) in enumerate(rskf.split(X, y)):
         X_train, X_test = X[train], X[test]
         y_train, y_test = y[train], y[test]
