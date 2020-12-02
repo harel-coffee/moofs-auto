@@ -10,8 +10,8 @@ from sklearn.svm import SVC
 from sklearn.feature_selection import chi2
 
 from keel import find_datasets
-from methods.mooclf import MooClf
-from methods.fsclf import FSClf
+from methods.fsclf import FeatueSelectionClf
+from methods.gaaccclf import GeneticAlgorithmAccuracyClf
 from methods.gaacccost import GAAccCost
 
 DATASETS_DIR = os.path.join(os.path.realpath(os.path.dirname(__file__)), 'datasets')
@@ -29,9 +29,9 @@ test_size = 0.2
 scale_features = 0.7
 methods = {}
 for key, base in base_classifiers.items():
-    methods['MOO-{}'.format(key)] = MooClf(base, scale_features, objectives, test_size)
-    methods['SF-{}'.format(key)] = FSClf(base, chi2, scale_features)
-    methods['GAAccCost-{}'.format(key)] = GAAccCost(base, scale_features, objectives, test_size)
+    methods['FS-{}'.format(key)] = FeatueSelectionClf(base, chi2, scale_features)
+    methods['GAacc-{}'.format(key)] = GeneticAlgorithmAccuracyClf(base, scale_features, objectives, test_size)
+    methods['GAaccCost-{}'.format(key)] = GAAccCost(base, scale_features, objectives, test_size)
 
 mean_scores = np.zeros((n_datasets, len(methods)))
 stds = np.zeros((n_datasets, len(methods)))
