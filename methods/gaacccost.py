@@ -6,10 +6,10 @@ from pymoo.factory import get_crossover, get_mutation, get_sampling
 
 from sklearn.base import ClassifierMixin, BaseEstimator
 
-from mooOptimization import FeatureSelectionProblem
+from methods.optimization.optimizationAccCost import FeatureSelectionAccuracyCostProblem
 
 
-class MooClf(BaseEstimator, ClassifierMixin):
+class GAAccCost(BaseEstimator, ClassifierMixin):
     def __init__(self, base_estimator, scale_features=0.5, objectives=1, test_size=0.5, p_size=100, c_prob=0.1, m_prob=0.1):
         self.base_estimator = base_estimator
         self.test_size = test_size
@@ -17,6 +17,7 @@ class MooClf(BaseEstimator, ClassifierMixin):
         self.c_prob = c_prob
         self.m_prob = m_prob
 
+        self.feature_costs = None
         self.estimator = None
         self.res = None
         self.selected_features = None
@@ -25,7 +26,7 @@ class MooClf(BaseEstimator, ClassifierMixin):
 
     def fit(self, X, y):
         features = range(X.shape[1])
-        problem = FeatureSelectionProblem(X, y, self.test_size, self.base_estimator, features, self.objectives, self.scale_features)
+        problem = FeatureSelectionAccuracyCostProblem(X, y, self.test_size, self.base_estimator, features, self.objectives, self.feature_costs, self.scale_features)
 
         algorithm = GA(
                        pop_size=self.p_size,

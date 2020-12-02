@@ -63,3 +63,19 @@ def load_dataset(dataset_name, return_X_y=False, storage=STORAGE_DIR):
     if return_X_y:
         return prepare_X_y(data, target)
     return Bunch(data=data, target=target, filename=data_file)
+
+
+def load_feature_costs(dataset_name):
+    features = []
+    costs = []
+    with open('datasets/%s/%s.cost' % (dataset_name, dataset_name), 'rt') as file:
+        feature_costs = file.read()
+        feature_costs = feature_costs.split("\n")
+        del feature_costs[-1]
+        for row_id, row in enumerate(feature_costs):
+            f, c = row.split(":")
+            c = c.replace('\t', '')
+            c = float(c)
+            features.append(f)
+            costs.append(c)
+    return costs

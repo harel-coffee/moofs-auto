@@ -7,7 +7,7 @@ from sklearn.base import clone
 from sklearn.model_selection import train_test_split
 
 
-class FeatureSelectionProblem(Problem):
+class FeatureSelectionAccuracyProblem(Problem):
     def __init__(self, X, y, test_size, estimator, feature_names, objectives, scale_features=0.5, random_state=0):
         self.test_size = test_size
         self.estimator = estimator

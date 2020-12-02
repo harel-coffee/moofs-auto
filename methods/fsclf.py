@@ -7,7 +7,7 @@ from sklearn.feature_selection import SelectKBest
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 
-class FSClf(BaseEstimator, ClassifierMixin):
+class FeatueSelectionClf(BaseEstimator, ClassifierMixin):
     def __init__(self, base_estimator, score_function, scale_features=0.5):
         self.base_estimator = base_estimator
         self.score_function = score_function

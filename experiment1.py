@@ -12,11 +12,15 @@ from sklearn.base import clone
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.feature_selection import chi2
 
-from keel import load_dataset, find_datasets
-from methods.mooclf import MooClf
-from methods.fsclf import FSClf
+from keel import load_dataset, find_datasets, load_feature_costs
+from methods.fsclf import FeatueSelectionClf
+from methods.gaaccclf import GeneticAlgorithmAccuracyClf
+from methods.gaacccost import GAAccCost
+
 
 DATASETS_DIR = os.path.join(os.path.realpath(os.path.dirname(__file__)), 'datasets')
+# datasets_enum = enumerate(find_datasets(DATASETS_DIR))
+n_datasets = len(list(enumerate(find_datasets(DATASETS_DIR))))
 
 base_classifiers = {
     'GNB': GaussianNB(),
@@ -25,13 +29,15 @@ base_classifiers = {
     'CART': DecisionTreeClassifier(random_state=10),
 }
 
-methods = {}
+objectives = 1
+test_size = 0.2
 scale_features = 0.7
+methods = {}
 for key, base in base_classifiers.items():
-    methods['MOO-{}'.format(key)] = MooClf(base, scale_features, objectives=1, test_size=0.2)
-    methods['SF-{}'.format(key)] = FSClf(base, chi2, scale_features)
+    methods['FS-{}'.format(key)] = FeatueSelectionClf(base, chi2, scale_features)
+    methods['GAacc-{}'.format(key)] = GeneticAlgorithmAccuracyClf(base, scale_features, objectives, test_size)
+    methods['GAaccCost-{}'.format(key)] = GAAccCost(base, scale_features, objectives, test_size)
 
-n_datasets = 5
 n_splits = 5
 n_repeats = 2
 rskf = RepeatedStratifiedKFold(n_splits=n_splits, n_repeats=n_repeats, random_state=1234)
@@ -52,12 +58,17 @@ for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
         feature_names = feature_names[0].split(', ')
     print(feature_names)
 
+    # Get feature costs
+    feature_costs = load_feature_costs(dataset)
+
     for fold_id, (train, test) in enumerate(rskf.split(X, y)):
         X_train, X_test = X[train], X[test]
         y_train, y_test = y[train], y[test]
         for clf_id, clf_name in enumerate(methods):
             print(clf_name)
             clf = clone(methods[clf_name])
+            if hasattr(clf, 'feature_costs'):
+                clf.feature_costs = feature_costs
             clf.fit(X_train, y_train)
             y_pred = clf.predict(X_test)
             scores[clf_id, fold_id] = accuracy_score(y_test, y_pred)
