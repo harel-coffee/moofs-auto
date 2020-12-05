@@ -16,10 +16,10 @@ from keel import load_dataset, find_datasets, load_feature_costs
 from methods.fsclf import FeatueSelectionClf
 from methods.gaaccclf import GeneticAlgorithmAccuracyClf
 from methods.gaacccost import GAAccCost
+from methods.nsgaacccost import NSGAAccCost
 
 
 DATASETS_DIR = os.path.join(os.path.realpath(os.path.dirname(__file__)), 'datasets')
-# datasets_enum = enumerate(find_datasets(DATASETS_DIR))
 n_datasets = len(list(enumerate(find_datasets(DATASETS_DIR))))
 
 base_classifiers = {
@@ -29,14 +29,14 @@ base_classifiers = {
     'CART': DecisionTreeClassifier(random_state=10),
 }
 
-objectives = 1
 test_size = 0.2
 scale_features = 0.7
 methods = {}
 for key, base in base_classifiers.items():
-    methods['FS-{}'.format(key)] = FeatueSelectionClf(base, chi2, scale_features)
-    methods['GAacc-{}'.format(key)] = GeneticAlgorithmAccuracyClf(base, scale_features, objectives, test_size)
-    methods['GAaccCost-{}'.format(key)] = GAAccCost(base, scale_features, objectives, test_size)
+    # methods['FS-{}'.format(key)] = FeatueSelectionClf(base, chi2, scale_features)
+    # methods['GAacc-{}'.format(key)] = GeneticAlgorithmAccuracyClf(base, scale_features, test_size)
+    # methods['GAaccCost-{}'.format(key)] = GAAccCost(base, scale_features, test_size)
+    methods['NSGAaccCost-{}'.format(key)] = NSGAAccCost(base, scale_features, test_size)
 
 n_splits = 5
 n_repeats = 2
@@ -60,6 +60,9 @@ for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
 
     # Get feature costs
     feature_costs = load_feature_costs(dataset)
+    # Normalization
+    feature_costs_norm = [float(i)/sum(feature_costs) for i in feature_costs]
+    # sprawdz czy w kazdym foldzie jest taki sam wynik (nie powinien byc taki sam!)
 
     for fold_id, (train, test) in enumerate(rskf.split(X, y)):
         X_train, X_test = X[train], X[test]
@@ -68,7 +71,7 @@ for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
             print(clf_name)
             clf = clone(methods[clf_name])
             if hasattr(clf, 'feature_costs'):
-                clf.feature_costs = feature_costs
+                clf.feature_costs = feature_costs_norm
             clf.fit(X_train, y_train)
             y_pred = clf.predict(X_test)
             scores[clf_id, fold_id] = accuracy_score(y_test, y_pred)

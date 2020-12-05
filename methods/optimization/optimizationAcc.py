@@ -27,10 +27,13 @@ class FeatureSelectionAccuracyProblem(Problem):
 
     def validation(self, x):
         clf = clone(self.estimator)
-        if all(x) is False:
+
+        if all(not element for element in x):
+            # All elements in x are False
             metrics = 0
             return metrics
         else:
+            # Not all elements in x are False
             clf.fit(self.X_train[:, x], self.y_train)
             y_pred = clf.predict(self.X_test[:, x])
             metrics = accuracy_score(self.y_test, y_pred)

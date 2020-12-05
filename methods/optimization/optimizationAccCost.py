@@ -29,10 +29,12 @@ class FeatureSelectionAccuracyCostProblem(Problem):
 
     def validation(self, x):
         clf = clone(self.estimator)
-        if all(x) is False:
+        if all(not element for element in x):
+            # All elements in x are False
             metrics = 0
             return metrics
         else:
+            # Not all elements in x are False
             clf.fit(self.X_train[:, x], self.y_train)
             y_pred = clf.predict(self.X_test[:, x])
             metrics = accuracy_score(self.y_test, y_pred)
@@ -51,7 +53,8 @@ class FeatureSelectionAccuracyCostProblem(Problem):
         if cost_sum == 0:
             out["F"] = [0]
         else:
-            out["F"] = [-1 * (scores / cost_sum)]
+            criterion = scores / cost_sum
+            out["F"] = [-1 * criterion]
 
         # scale_features is a number from 0 to 1
         # if number = 1-scale_features, scale_features = 1 means all features
