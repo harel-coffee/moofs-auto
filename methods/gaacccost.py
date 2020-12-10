@@ -10,7 +10,7 @@ from methods.optimization.optimizationAccCost import FeatureSelectionAccuracyCos
 
 
 class GAAccCost(BaseEstimator, ClassifierMixin):
-    def __init__(self, base_estimator, scale_features=0.5, objectives=1, test_size=0.5, p_size=100, c_prob=0.1, m_prob=0.1):
+    def __init__(self, base_estimator, scale_features=0.5, test_size=0.5, objectives=1, p_size=100, c_prob=0.1, m_prob=0.1):
         self.base_estimator = base_estimator
         self.test_size = test_size
         self.p_size = p_size
@@ -26,7 +26,7 @@ class GAAccCost(BaseEstimator, ClassifierMixin):
 
     def fit(self, X, y):
         features = range(X.shape[1])
-        problem = FeatureSelectionAccuracyCostProblem(X, y, self.test_size, self.base_estimator, features, self.objectives, self.feature_costs, self.scale_features)
+        problem = FeatureSelectionAccuracyCostProblem(X, y, self.test_size, self.base_estimator, features, self.feature_costs, self.scale_features, self.objectives)
 
         algorithm = GA(
                        pop_size=self.p_size,
@@ -43,11 +43,11 @@ class GAAccCost(BaseEstimator, ClassifierMixin):
                        verbose=False,
                        save_history=True)
 
-        print("Selected features for each fold: {}".format(np.sum(res.opt.get('SF')[0])))
-        print(res.opt.get('SF')[0])
-
-        self.selected_features = res.opt.get('SF')[0]
+        self.selected_features = res.X[0]
         self.estimator = self.base_estimator.fit(X[:, self.selected_features], y)
+        print("Selected features for each fold: {}".format(np.sum(self.selected_features)))
+        print(self.selected_features)
+
         return self
 
     def predict(self, X):

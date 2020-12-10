@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 
 
 class FeatureSelectionAccuracyProblem(Problem):
-    def __init__(self, X, y, test_size, estimator, feature_names, objectives, scale_features=0.5, random_state=0):
+    def __init__(self, X, y, test_size, estimator, feature_names, scale_features=0.5, objectives=1, random_state=0):
         self.test_size = test_size
         self.estimator = estimator
         self.objectives = objectives
@@ -53,6 +53,3 @@ class FeatureSelectionAccuracyProblem(Problem):
         # Function constraint:
         number = int((1 - self.scale_features) * self.n_max)
         out["G"] = (self.n_max - np.sum(x) - number) ** 2
-
-        # Selected Features in form of list of True and False
-        out["SF"] = x

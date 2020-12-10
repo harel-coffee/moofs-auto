@@ -8,7 +8,7 @@ from sklearn.base import clone
 
 
 class FeatureSelectionAccuracyCostProblem(Problem):
-    def __init__(self, X, y, test_size, estimator, feature_names, objectives, feature_costs, scale_features=0.5, random_state=0):
+    def __init__(self, X, y, test_size, estimator, feature_names, feature_costs, scale_features=0.5, objectives=1, random_state=0):
         self.y = y
         self.test_size = test_size
         self.estimator = estimator
@@ -62,6 +62,3 @@ class FeatureSelectionAccuracyCostProblem(Problem):
         # Function constraint to select specific numbers of features:
         number = int((1 - self.scale_features) * self.n_max)
         out["G"] = (self.n_max - np.sum(x) - number) ** 2
-
-        # Selected Features in form of list of True and False
-        out["SF"] = x
