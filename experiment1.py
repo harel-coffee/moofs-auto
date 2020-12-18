@@ -64,7 +64,7 @@ for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
 
     feature_number = len(feature_names)
     scale_features = np.linspace(1/feature_number, 1.0, feature_number)
-
+    scale_features += 0.01
 
     X, y = load_dataset(dataset, return_X_y=True, storage=DATASETS_DIR)
     # Normalization - transform data to [0, 1]
@@ -79,11 +79,11 @@ for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
         methods = {}
         for key, base in base_classifiers.items():
             methods['FS_{}'.format(key)] = FeatueSelectionClf(base, chi2, scale)
-            # methods['GAacc_{}'.format(key)] = GeneticAlgorithmAccuracyClf(base, scale, test_size)
-            # methods['GAaccCost_{}'.format(key)] = GAAccCost(base, scale, test_size)
-            #
-            # methods['NSGAaccCost_acc_{}'.format(key)] = NSGAAccCost(base, scale, test_size)
-            # methods['NSGAaccCost_cost_{}'.format(key)] = NSGAAccCost(base, scale, test_size)
+            methods['GAacc_{}'.format(key)] = GeneticAlgorithmAccuracyClf(base, scale, test_size)
+            methods['GAaccCost_{}'.format(key)] = GAAccCost(base, scale, test_size)
+
+            methods['NSGAaccCost_acc_{}'.format(key)] = NSGAAccCost(base, scale, test_size)
+            methods['NSGAaccCost_cost_{}'.format(key)] = NSGAAccCost(base, scale, test_size)
             # methods['NSGAaccCost_promethee_{}'.format(key)] = NSGAAccCost(base, scale, test_size)
 
         scale_percent = int(scale * 100)
