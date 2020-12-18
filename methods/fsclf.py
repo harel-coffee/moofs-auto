@@ -16,7 +16,7 @@ class FeatueSelectionClf(BaseEstimator, ClassifierMixin):
         self.feature_costs = None
 
     def fit(self, X, y):
-        self.k = int((self.scale_features) * X.shape[1] + 1)
+        self.k = int((self.scale_features) * X.shape[1])
         KBest = SelectKBest(self.score_function, self.k)
         KBest = KBest.fit(X, y)
         self.selected_features = KBest.get_support()

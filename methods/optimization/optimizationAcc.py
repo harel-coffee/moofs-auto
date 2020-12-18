@@ -49,7 +49,7 @@ class FeatureSelectionAccuracyProblem(Problem):
         # scale_features is a number from 0 to 1
         # if value = 1-scale_features, scale_features = 1 means all features
         # and scale_features = 0 means none feature will be selected
-        
+
         # Function constraint:
         number = int((1 - self.scale_features) * self.n_max)
         out["G"] = (self.n_max - np.sum(x) - number) ** 2
