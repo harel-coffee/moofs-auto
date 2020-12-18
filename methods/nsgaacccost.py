@@ -3,7 +3,6 @@ import numpy as np
 from pymoo.algorithms.nsga2 import NSGA2
 from pymoo.optimize import minimize
 from pymoo.factory import get_crossover, get_mutation, get_sampling
-from pymoo.visualization.scatter import Scatter
 
 from sklearn.base import ClassifierMixin, BaseEstimator
 
@@ -23,6 +22,7 @@ class NSGAAccCost(BaseEstimator, ClassifierMixin):
         self.res = None
         self.selected_features = None
         self.fig_filename = None
+        # self.solutions = None
         self.pareto_decision = 'accuracy'
         self.objectives = objectives
         self.scale_features = scale_features
@@ -46,31 +46,18 @@ class NSGAAccCost(BaseEstimator, ClassifierMixin):
                        verbose=False,
                        save_history=True)
 
-        # Plotting Pareto front - jak będą potrzebne, to zrób ładniejsze
-        plot = Scatter(title="Objective Space")
-        plot.add(res.F, color="red")
-        plot.save('results/experiment1/figures/scatter/%s.png' % (self.fig_filename))
-
         # Select solution from the Pareto front
-        # F zwraca wartości accuracy i total cost wybranych rozwiązań:
-        # [[-0.65306122  0.51196363]
-         # [-0.67346939  0.53793896]]
-        print("F", res.F)
-        # X zwraca wektor wartości True i False które cechy zostały wybrane dla danych rozwiązań Pareto
-        # [[ True  True  True  True  True  True  True False  True  True False  True  False]
-        # [ True  True  True  True  True  True  True  True  True False False  True  False]]
-        print("X", res.X)
+        # F returns solutions [-accuracy, total_cost]
+        self.solutions = res.F
+        # X returns True and False which features has been selected
         if self.pareto_decision == 'accuracy':
-            index = np.argmin(res.F[:,0], axis=0)
+            index = np.argmin(res.F[:, 0], axis=0)
             self.selected_features = res.X[index]
         elif self.pareto_decision == 'cost':
-            index = np.argmin(res.F[:,1], axis=0)
+            index = np.argmin(res.F[:, 1], axis=0)
             self.selected_features = res.X[index]
         # elif self.pareto_decision == 'promethee':
         #     xx
-
-        print("Selected features for each fold: {}".format(np.sum(self.selected_features)))
-        print(self.selected_features)
 
         self.estimator = self.base_estimator.fit(X[:, self.selected_features], y)
         return self
@@ -80,3 +67,20 @@ class NSGAAccCost(BaseEstimator, ClassifierMixin):
 
     def predict_proba(self, X):
         return self.estimator.predict_proba(X[:, self.selected_features])
+
+    def selected_features_cost(self):
+        total_cost = 0
+        for id, cost in enumerate(self.feature_costs):
+            if self.selected_features[id]:
+                total_cost += cost
+        return total_cost
+
+# def promethee():
+#     # 1. porównaj parowo każdy wiersz z każdym wierszem z uzyskanych rozwiązań: res.F[:,1]
+#     # 1. Pairwise differences between each solution are computed for all objectives.
+#     # 2. A preference function, based on the significance and insignifi- cance levels, is applied.
+#     # 3. The overall preference index is computed by performing a weighted sum of the objectives for each pairwise comparison.
+#     # 4. Positive and negative outranking flows are calculated for each solution, based on the overall pairwise comparisons.
+#     # 5. The positive and negative outranking flows are subtracted to compute a final outranking flow, used for ranking the solutions.
+#
+#     return 0

@@ -48,8 +48,7 @@ class FeatureSelectionAccuracyCostProblem(Problem):
         costs_selected = feature_costs[np.argwhere(x==True)]
         cost_sum = sum(costs_selected)
 
-        # By default, function F is always minimize, if we want a mximize,
-        # the minus sign (-) must be added
+        # By default, function F is always minimize, if we want a mximize, the minus sign (-) must be added
         if cost_sum == 0:
             out["F"] = [0]
         else:
@@ -59,6 +58,7 @@ class FeatureSelectionAccuracyCostProblem(Problem):
         # scale_features is a number from 0 to 1
         # if number = 1-scale_features, scale_features = 1 means all features
         # and scale_features = 0 means none feature will be selected
+        
         # Function constraint to select specific numbers of features:
         number = int((1 - self.scale_features) * self.n_max)
         out["G"] = (self.n_max - np.sum(x) - number) ** 2

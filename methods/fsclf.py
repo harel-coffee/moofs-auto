@@ -1,6 +1,4 @@
-import numpy as np
 import warnings
-
 from sklearn.base import ClassifierMixin, BaseEstimator
 from sklearn.feature_selection import SelectKBest
 
@@ -15,15 +13,13 @@ class FeatueSelectionClf(BaseEstimator, ClassifierMixin):
         self.estimator = None
         self.selected_features = None
         self.k = None
+        self.feature_costs = None
 
     def fit(self, X, y):
         self.k = int((self.scale_features) * X.shape[1] + 1)
         KBest = SelectKBest(self.score_function, self.k)
         KBest = KBest.fit(X, y)
         self.selected_features = KBest.get_support()
-        print("Selected features for each fold:{}".format(np.sum(self.selected_features)))
-        print(self.selected_features)
-
         self.estimator = self.base_estimator.fit(X[:, self.selected_features], y)
         return self
 
@@ -32,3 +28,10 @@ class FeatueSelectionClf(BaseEstimator, ClassifierMixin):
 
     def predict_proba(self, X):
         return self.estimator.predict_proba(X[:, self.selected_features])
+
+    def selected_features_cost(self):
+        total_cost = 0
+        for id, cost in enumerate(self.feature_costs):
+            if self.selected_features[id]:
+                total_cost += cost
+        return total_cost

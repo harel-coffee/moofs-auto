@@ -41,8 +41,6 @@ class FeatureSelectionAccuracyCostMultiProblem(Problem):
             metrics = accuracy_score(self.y_test, y_pred)
             return metrics
 
-# The _evaluate method takes a one-dimensional NumPy array x number of entries equal to n_var. This behavior is enabled by setting elementwise_evaluation=True while calling the super() method.
-# Note: This method is called in each iteration for each solution exactly once.
     def _evaluate(self, x, out, *args, **kwargs):
         scores = self.validation(x)
 
@@ -51,8 +49,7 @@ class FeatureSelectionAccuracyCostMultiProblem(Problem):
         costs_selected = feature_costs[np.argwhere(x==True)]
         cost_sum = sum(costs_selected)
 
-        # Function F is always minimize, but
-        # the minus sign (-) before F means maximize
+        # Function F is always minimize, but the minus sign (-) before F means maximize
         if cost_sum == 0:
             out["F"] = [0, 0]
         else:
@@ -67,6 +64,7 @@ class FeatureSelectionAccuracyCostMultiProblem(Problem):
         # if number = 1-scale_features,
         # scale_features = 1 means all features
         # and scale_features = 0 means none feature will be selected
+        
         # Function constraint to select specific numbers of features:
         number = int((1 - self.scale_features) * self.n_max)
         out["G"] = (self.n_max - np.sum(x) - number) ** 2

@@ -1,5 +1,3 @@
-import numpy as np
-
 from pymoo.algorithms.so_genetic_algorithm import GA
 from pymoo.optimize import minimize
 from pymoo.factory import get_crossover, get_mutation, get_sampling
@@ -16,12 +14,13 @@ class GeneticAlgorithmAccuracyClf(BaseEstimator, ClassifierMixin):
         self.p_size = p_size
         self.c_prob = c_prob
         self.m_prob = m_prob
+        self.objectives = objectives
+        self.scale_features = scale_features
 
         self.estimator = None
         self.res = None
         self.selected_features = None
-        self.objectives = objectives
-        self.scale_features = scale_features
+        self.feature_costs = None
 
     def fit(self, X, y):
         features = range(X.shape[1])
@@ -42,11 +41,8 @@ class GeneticAlgorithmAccuracyClf(BaseEstimator, ClassifierMixin):
                        verbose=False,
                        save_history=True)
 
-        self.selected_features = res.X[0]
+        self.selected_features = res.X
         self.estimator = self.base_estimator.fit(X[:, self.selected_features], y)
-        print("Selected features for each fold: {}".format(np.sum(self.selected_features)))
-        print(self.selected_features)
-
         return self
 
     def predict(self, X):
@@ -54,3 +50,10 @@ class GeneticAlgorithmAccuracyClf(BaseEstimator, ClassifierMixin):
 
     def predict_proba(self, X):
         return self.estimator.predict_proba(X[:, self.selected_features])
+
+    def selected_features_cost(self):
+        total_cost = 0
+        for id, cost in enumerate(self.feature_costs):
+            if self.selected_features[id]:
+                total_cost += cost
+        return total_cost
