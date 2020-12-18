@@ -23,9 +23,9 @@ DATASETS_DIR = os.path.join(os.path.realpath(os.path.dirname(__file__)), 'datase
 n_datasets = len(list(enumerate(find_datasets(DATASETS_DIR))))
 
 base_classifiers = {
-    # 'GNB': GaussianNB(),      # na razie zostaw, ew. do artykułu odrzuć
+    'GNB': GaussianNB(),
     # 'SVM': SVC(),
-    'kNN': KNeighborsClassifier(),
+    # 'kNN': KNeighborsClassifier(),
     # 'CART': DecisionTreeClassifier(random_state=10),
 }
 
@@ -33,18 +33,17 @@ test_size = 0.2
 scale_features = 0.7
 methods = {}
 for key, base in base_classifiers.items():
-    # methods['FS-{}'.format(key)] = FeatueSelectionClf(base, chi2, scale_features)
-    # methods['GAacc-{}'.format(key)] = GeneticAlgorithmAccuracyClf(base, scale_features, test_size)
-    # methods['GAaccCost-{}'.format(key)] = GAAccCost(base, scale_features, test_size)
+    methods['FS_{}'.format(key)] = FeatueSelectionClf(base, chi2, scale_features)
+    methods['GAacc_{}'.format(key)] = GeneticAlgorithmAccuracyClf(base, scale_features, test_size)
+    methods['GAaccCost_{}'.format(key)] = GAAccCost(base, scale_features, test_size)
 
-    # Select one from the NSGA
-    methods['NSGAaccCost_acc-{}'.format(key)] = NSGAAccCost(base, scale_features, test_size)
-    # methods['NSGAaccCost_cost-{}'.format(key)] = NSGAAccCost(base, scale_features, test_size)
-    # methods['NSGAaccCost_promethee-{}'.format(key)] = NSGAAccCost(base, scale_features, test_size)
+    methods['NSGAaccCost_acc_{}'.format(key)] = NSGAAccCost(base, scale_features, test_size)
+    methods['NSGAaccCost_cost_{}'.format(key)] = NSGAAccCost(base, scale_features, test_size)
+    # methods['NSGAaccCost_promethee_{}'.format(key)] = NSGAAccCost(base, scale_features, test_size)
 
 # Select one corresponding to NSGA
 pareto_decision = 'accuracy'
-# pareto_decision = 'cost'
+pareto_decision = 'cost'
 # pareto_decision = 'promethee'
 
 n_splits = 5
