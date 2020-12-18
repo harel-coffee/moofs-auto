@@ -30,7 +30,7 @@ base_classifiers = {
 }
 
 test_size = 0.2
-scale_features = 0.7
+# scale_features = 0.7
 # methods = {}
 # for key, base in base_classifiers.items():
 #     methods['FS_{}'.format(key)] = FeatueSelectionClf(base, chi2, scale_features)
@@ -41,7 +41,7 @@ scale_features = 0.7
 #     methods['NSGAaccCost_cost_{}'.format(key)] = NSGAAccCost(base, scale_features, test_size)
 #     # methods['NSGAaccCost_promethee_{}'.format(key)] = NSGAAccCost(base, scale_features, test_size)
 
-# Select one corresponding to NSGA
+# Pareto decision NSGA
 pareto_decision = 'accuracy'
 pareto_decision = 'cost'
 # pareto_decision = 'promethee'
@@ -81,14 +81,15 @@ for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
             methods['FS_{}'.format(key)] = FeatueSelectionClf(base, chi2, scale)
             # methods['GAacc_{}'.format(key)] = GeneticAlgorithmAccuracyClf(base, scale, test_size)
             # methods['GAaccCost_{}'.format(key)] = GAAccCost(base, scale, test_size)
-
+            #
             # methods['NSGAaccCost_acc_{}'.format(key)] = NSGAAccCost(base, scale, test_size)
             # methods['NSGAaccCost_cost_{}'.format(key)] = NSGAAccCost(base, scale, test_size)
             # methods['NSGAaccCost_promethee_{}'.format(key)] = NSGAAccCost(base, scale, test_size)
 
         scale_percent = int(scale * 100)
 
-        print(f"Number of selected features: {int(scale * len(feature_names))}")
+        selected_feature_number = int(scale * len(feature_names))
+        print(f"Number of selected features: {selected_feature_number}")
 
         scores = np.zeros((len(methods), n_folds))
         total_cost = np.zeros((len(methods), n_folds))
@@ -116,12 +117,12 @@ for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
 
         # Save results to csv
         for clf_id, clf_name in enumerate(methods):
-            filename_acc = "results/experiment1/scale_percent/accuracy/%s/%s.csv" % (dataset, clf_name)
-            if not os.path.exists("results/experiment1/scale_percent/accuracy/%s/" % (dataset)):
-                os.makedirs("results/experiment1/scale_percent/accuracy/%s/" % (dataset))
+            filename_acc = "results/experiment1/accuracy/%s/f%d/%s.csv" % (dataset, selected_feature_number, clf_name)
+            if not os.path.exists("results/experiment1/accuracy/%s/f%d/" % (dataset, selected_feature_number)):
+                os.makedirs("results/experiment1/accuracy/%s/f%d/" % (dataset, selected_feature_number))
             np.savetxt(fname=filename_acc, fmt="%f", X=scores[clf_id, :])
 
-            filename_cost = "results/experiment1/scale_percent/cost/%s/%s.csv" % (dataset, clf_name)
-            if not os.path.exists("results/experiment1/scale_percent/cost/%s/" % (dataset)):
-                os.makedirs("results/experiment1/scale_percent/cost/%s/" % (dataset))
+            filename_cost = "results/experiment1/cost/%s/f%d/%s.csv" % (dataset, selected_feature_number, clf_name)
+            if not os.path.exists("results/experiment1/cost/%s/f%d/" % (dataset, selected_feature_number)):
+                os.makedirs("results/experiment1/cost/%s/f%d/" % (dataset, selected_feature_number))
             np.savetxt(fname=filename_cost, fmt="%f", X=total_cost[clf_id, :])
