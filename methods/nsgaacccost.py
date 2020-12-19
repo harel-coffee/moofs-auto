@@ -10,7 +10,7 @@ from methods.optimization.optimizationAccCostMulti import FeatureSelectionAccura
 
 
 class NSGAAccCost(BaseEstimator, ClassifierMixin):
-    def __init__(self, base_estimator, scale_features=0.5, test_size=0.5, objectives=2, p_size=100, c_prob=0.1, m_prob=0.1):
+    def __init__(self, base_estimator, scale_features=0.5, test_size=0.5, pareto_decision='accuracy', objectives=2, p_size=100, c_prob=0.1, m_prob=0.1):
         self.base_estimator = base_estimator
         self.test_size = test_size
         self.p_size = p_size
@@ -23,7 +23,7 @@ class NSGAAccCost(BaseEstimator, ClassifierMixin):
         self.selected_features = None
         self.fig_filename = None
         # self.solutions = None
-        self.pareto_decision = 'accuracy'
+        self.pareto_decision = pareto_decision
         self.objectives = objectives
         self.scale_features = scale_features
 

@@ -30,26 +30,14 @@ base_classifiers = {
 }
 
 test_size = 0.2
-# scale_features = 0.7
-# methods = {}
-# for key, base in base_classifiers.items():
-#     methods['FS_{}'.format(key)] = FeatueSelectionClf(base, chi2, scale_features)
-#     methods['GAacc_{}'.format(key)] = GeneticAlgorithmAccuracyClf(base, scale_features, test_size)
-#     methods['GAaccCost_{}'.format(key)] = GAAccCost(base, scale_features, test_size)
-#
-#     methods['NSGAaccCost_acc_{}'.format(key)] = NSGAAccCost(base, scale_features, test_size)
-#     methods['NSGAaccCost_cost_{}'.format(key)] = NSGAAccCost(base, scale_features, test_size)
-#     # methods['NSGAaccCost_promethee_{}'.format(key)] = NSGAAccCost(base, scale_features, test_size)
-
-# Pareto decision NSGA
-pareto_decision = 'accuracy'
-pareto_decision = 'cost'
-# pareto_decision = 'promethee'
-
 n_splits = 5
 n_repeats = 2
 rskf = RepeatedStratifiedKFold(n_splits=n_splits, n_repeats=n_repeats, random_state=1234)
 n_folds = n_splits * n_repeats
+# Pareto decision for NSGA
+pareto_decision_a = 'accuracy'
+pareto_decision_c = 'cost'
+# pareto_decision_p = 'promethee'
 
 for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
     # Get feature names
@@ -78,17 +66,15 @@ for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
     for scale in scale_features:
         methods = {}
         for key, base in base_classifiers.items():
-            methods['FS_{}'.format(key)] = FeatueSelectionClf(base, chi2, scale)
-            methods['GAacc_{}'.format(key)] = GeneticAlgorithmAccuracyClf(base, scale, test_size)
-            methods['GAaccCost_{}'.format(key)] = GAAccCost(base, scale, test_size)
+            # methods['FS_{}'.format(key)] = FeatueSelectionClf(base, chi2, scale)
+            # methods['GAacc_{}'.format(key)] = GeneticAlgorithmAccuracyClf(base, scale, test_size)
+            # methods['GAaccCost_{}'.format(key)] = GAAccCost(base, scale, test_size)
 
-            methods['NSGAaccCost_acc_{}'.format(key)] = NSGAAccCost(base, scale, test_size)
-            methods['NSGAaccCost_cost_{}'.format(key)] = NSGAAccCost(base, scale, test_size)
-            # methods['NSGAaccCost_promethee_{}'.format(key)] = NSGAAccCost(base, scale, test_size)
+            methods['NSGAaccCost_acc_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_a)
+            # methods['NSGAaccCost_cost_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_c)
+            # methods['NSGAaccCost_promethee_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_p)
 
-        scale_percent = int(scale * 100)
-
-        selected_feature_number = int(scale * len(feature_names))
+        selected_feature_number = int(scale * feature_number)
         print(f"Number of selected features: {selected_feature_number}")
 
         scores = np.zeros((len(methods), n_folds))
@@ -103,11 +89,9 @@ for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
                 clf.feature_costs = feature_costs_norm
 
                 if hasattr(clf, 'solutions'):
-                    filename = ("%s_%s" % (clf_name, fold_id))
+                    filename = ("%s_f%d_%s_%s" % (dataset, scale, clf_name, fold_id))
                     print(clf.solutions)
                     plotting_pareto(clf.solutions, filename)
-                if hasattr(clf, 'pareto_decision'):
-                    clf.pareto_decision = pareto_decision
 
                 clf.fit(X_train, y_train)
                 y_pred = clf.predict(X_test)
@@ -115,7 +99,7 @@ for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
 
                 total_cost[clf_id, fold_id] = clf.selected_features_cost()
 
-        # Save results to csv
+        # Save results accuracy and total cost of selected features to csv
         for clf_id, clf_name in enumerate(methods):
             filename_acc = "results/experiment1/accuracy/%s/f%d/%s.csv" % (dataset, selected_feature_number, clf_name)
             if not os.path.exists("results/experiment1/accuracy/%s/f%d/" % (dataset, selected_feature_number)):
@@ -126,3 +110,8 @@ for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
             if not os.path.exists("results/experiment1/cost/%s/f%d/" % (dataset, selected_feature_number)):
                 os.makedirs("results/experiment1/cost/%s/f%d/" % (dataset, selected_feature_number))
             np.savetxt(fname=filename_cost, fmt="%f", X=total_cost[clf_id, :])
+
+# Problemy:
+# 1. nie rysuje wykresu plotting_pareto()
+# 2. Błąd w badaniach na serwerze w tej metodzie: methods['NSGAaccCost_acc_{}, bo pareto_decision było cost zamiast accuracy
+# 3. w analysis wyniki zapisuja sie do tabelek w zlej formie, tzn. przy dwoch zbiorach danych, druga pętla nadpisuje wyniki w pierwszym dataset i zrob jakis warunek zeby nie wpisywac wyniki do tabelki gdy dataset ma mniej cech niz inne datasety

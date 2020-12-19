@@ -87,5 +87,6 @@ def load_feature_costs(dataset_name):
 def plotting_pareto(solutions, filename):
     plot = Scatter(title="Objective Space")
     plot.add(solutions, color="red")
-    print(solutions)
+    if not os.path.exists("results/experiment1/figures/scatter/"):
+        os.makedirs("results/experiment1/figures/scatter/")
     plot.save('results/experiment1/figures/scatter/%s.png' % (filename))
