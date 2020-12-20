@@ -23,6 +23,8 @@ class NSGAAccCost(BaseEstimator, ClassifierMixin):
         self.selected_features = None
         self.fig_filename = None
         # self.solutions = None
+        # self.solutions = []
+        # self.solutions = np.zeros((2))
         self.pareto_decision = pareto_decision
         self.objectives = objectives
         self.scale_features = scale_features

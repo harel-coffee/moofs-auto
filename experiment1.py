@@ -19,12 +19,13 @@ from methods.gaacccost import GAAccCost
 from methods.nsgaacccost import NSGAAccCost
 
 
+# !!! Move specific datasets into dataset folder !!!
 DATASETS_DIR = os.path.join(os.path.realpath(os.path.dirname(__file__)), 'datasets')
 n_datasets = len(list(enumerate(find_datasets(DATASETS_DIR))))
 
 base_classifiers = {
-    'GNB': GaussianNB(),
-    'SVM': SVC(),
+    # 'GNB': GaussianNB(),
+    # 'SVM': SVC(),
     'kNN': KNeighborsClassifier(),
     'CART': DecisionTreeClassifier(random_state=10),
 }
@@ -68,10 +69,10 @@ for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
         for key, base in base_classifiers.items():
             # methods['FS_{}'.format(key)] = FeatueSelectionClf(base, chi2, scale)
             # methods['GAacc_{}'.format(key)] = GeneticAlgorithmAccuracyClf(base, scale, test_size)
-            # methods['GAaccCost_{}'.format(key)] = GAAccCost(base, scale, test_size)
+            methods['GAaccCost_{}'.format(key)] = GAAccCost(base, scale, test_size)
 
             methods['NSGAaccCost_acc_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_a)
-            # methods['NSGAaccCost_cost_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_c)
+            methods['NSGAaccCost_cost_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_c)
             # methods['NSGAaccCost_promethee_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_p)
 
         selected_feature_number = int(scale * feature_number)
@@ -114,4 +115,3 @@ for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
 # Problemy:
 # 1. nie rysuje wykresu plotting_pareto()
 # 2. Błąd w badaniach na serwerze w tej metodzie: methods['NSGAaccCost_acc_{}, bo pareto_decision było cost zamiast accuracy
-# 3. w analysis wyniki zapisuja sie do tabelek w zlej formie, tzn. przy dwoch zbiorach danych, druga pętla nadpisuje wyniki w pierwszym dataset i zrob jakis warunek zeby nie wpisywac wyniki do tabelki gdy dataset ma mniej cech niz inne datasety

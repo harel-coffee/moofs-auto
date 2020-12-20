@@ -10,6 +10,13 @@ from sklearn.impute import SimpleImputer
 
 from pymoo.visualization.scatter import Scatter
 
+import matplotlib.pyplot as plt
+from matplotlib import cm
+from matplotlib import rcdefaults
+import matplotlib.lines as lines
+from scipy.ndimage import gaussian_filter1d
+from tqdm import tqdm
+
 STORAGE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "datasets")
 
 
