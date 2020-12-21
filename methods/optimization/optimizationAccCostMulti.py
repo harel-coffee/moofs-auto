@@ -64,7 +64,7 @@ class FeatureSelectionAccuracyCostMultiProblem(Problem):
         # if number = 1-scale_features,
         # scale_features = 1 means all features
         # and scale_features = 0 means none feature will be selected
-        
+
         # Function constraint to select specific numbers of features:
         number = int((1 - self.scale_features) * self.n_max)
         out["G"] = (self.n_max - np.sum(x) - number) ** 2

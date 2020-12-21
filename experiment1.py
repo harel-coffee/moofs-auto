@@ -27,7 +27,7 @@ base_classifiers = {
     # 'GNB': GaussianNB(),
     # 'SVM': SVC(),
     'kNN': KNeighborsClassifier(),
-    'CART': DecisionTreeClassifier(random_state=10),
+    # 'CART': DecisionTreeClassifier(random_state=10),
 }
 
 test_size = 0.2
@@ -38,7 +38,10 @@ n_folds = n_splits * n_repeats
 # Pareto decision for NSGA
 pareto_decision_a = 'accuracy'
 pareto_decision_c = 'cost'
-# pareto_decision_p = 'promethee'
+pareto_decision_p = 'promethee'
+n_rows_p = 50
+
+# Dodaj zabezpieczenie, że jeśli coś jest już policzone, to żeby się nie liczyło od nowa
 
 for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
     # Get feature names
@@ -69,9 +72,9 @@ for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
         for key, base in base_classifiers.items():
             # methods['FS_{}'.format(key)] = FeatueSelectionClf(base, chi2, scale)
             # methods['GAacc_{}'.format(key)] = GeneticAlgorithmAccuracyClf(base, scale, test_size)
-            methods['GAaccCost_{}'.format(key)] = GAAccCost(base, scale, test_size)
+            # methods['GAaccCost_{}'.format(key)] = GAAccCost(base, scale, test_size)
 
-            methods['NSGAaccCost_acc_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_a)
+            # methods['NSGAaccCost_acc_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_a)
             methods['NSGAaccCost_cost_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_c)
             # methods['NSGAaccCost_promethee_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_p)
 
@@ -80,6 +83,7 @@ for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
 
         scores = np.zeros((len(methods), n_folds))
         total_cost = np.zeros((len(methods), n_folds))
+        pareto_solutions = np.zeros((n_folds, n_rows_p, 2))
 
         for fold_id, (train, test) in enumerate(rskf.split(X, y)):
             X_train, X_test = X[train], X[test]
@@ -88,17 +92,15 @@ for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
                 print(f"Fold number: {fold_id}, clf: {clf_name}")
                 clf = clone(methods[clf_name])
                 clf.feature_costs = feature_costs_norm
-
-                if hasattr(clf, 'solutions'):
-                    filename = ("%s_f%d_%s_%s" % (dataset, scale, clf_name, fold_id))
-                    print(clf.solutions)
-                    plotting_pareto(clf.solutions, filename)
-
                 clf.fit(X_train, y_train)
                 y_pred = clf.predict(X_test)
                 scores[clf_id, fold_id] = accuracy_score(y_test, y_pred)
-
                 total_cost[clf_id, fold_id] = clf.selected_features_cost()
+
+                if hasattr(clf, 'solutions'):
+                    for sol_id, solution in enumerate(clf.solutions):
+                        for s_id, s in enumerate(solution):
+                            pareto_solutions[fold_id, sol_id, s_id] = s
 
         # Save results accuracy and total cost of selected features to csv
         for clf_id, clf_name in enumerate(methods):
@@ -112,6 +114,16 @@ for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
                 os.makedirs("results/experiment1/cost/%s/f%d/" % (dataset, selected_feature_number))
             np.savetxt(fname=filename_cost, fmt="%f", X=total_cost[clf_id, :])
 
-# Problemy:
-# 1. nie rysuje wykresu plotting_pareto()
-# 2. Błąd w badaniach na serwerze w tej metodzie: methods['NSGAaccCost_acc_{}, bo pareto_decision było cost zamiast accuracy
+        # Save results pareto_solutions to csv
+        for fold_id in range(n_folds):
+            for sol_id in range(n_rows_p):
+                if (pareto_solutions[fold_id, sol_id, 0] != 0.0) and (pareto_solutions[fold_id, sol_id, 1] != 0.0):
+                    filename_pareto = "results/experiment1/pareto/%s/f%d/fold%d/sol%d.csv" % (dataset, selected_feature_number, fold_id, sol_id)
+                    if not os.path.exists("results/experiment1/pareto/%s/f%d/fold%d/" % (dataset, selected_feature_number, fold_id)):
+                        os.makedirs("results/experiment1/pareto/%s/f%d/fold%d/" % (dataset, selected_feature_number, fold_id))
+                    np.savetxt(fname=filename_pareto, fmt="%f", X=pareto_solutions[fold_id, sol_id, :])
+
+
+# Na serwerze liczy się teraz:
+# tylko dla thyroid
+# metody: FS, GA ac, GA cost,

@@ -10,12 +10,6 @@ from sklearn.impute import SimpleImputer
 
 from pymoo.visualization.scatter import Scatter
 
-import matplotlib.pyplot as plt
-from matplotlib import cm
-from matplotlib import rcdefaults
-import matplotlib.lines as lines
-from scipy.ndimage import gaussian_filter1d
-from tqdm import tqdm
 
 STORAGE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "datasets")
 
@@ -88,12 +82,3 @@ def load_feature_costs(dataset_name):
             features.append(f)
             costs.append(c)
     return costs
-
-
-# Plotting Pareto front
-def plotting_pareto(solutions, filename):
-    plot = Scatter(title="Objective Space")
-    plot.add(solutions, color="red")
-    if not os.path.exists("results/experiment1/figures/scatter/"):
-        os.makedirs("results/experiment1/figures/scatter/")
-    plot.save('results/experiment1/figures/scatter/%s.png' % (filename))
