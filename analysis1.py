@@ -146,15 +146,14 @@ for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
         if not os.path.exists("results/experiment1/plots/"):
             os.makedirs("results/experiment1/plots/")
 
-        max_select_feat = 22
         plt.ylabel("Accuracy")
         plt.xlabel("Number of selected features")
         plt.ylim(bottom=0.0, top=1.0)
         plt.title(f"Accuracy for dataset {dataset} and base classifier {key}")
-        plt.legend(loc='lower right')
+        plt.legend(loc='best')
         plt.grid(True, color="silver", linestyle=":", axis='y')
-        plt.xticks(range(1, max_select_feat), labels=range(1, max_select_feat))
-        plt.gcf().set_size_inches(6, 4)
+        plt.xticks(range(1, len(plot_data)+1), labels=range(1, len(plot_data)+1))
+        plt.gcf().set_size_inches(9, 6)
         plt.savefig(filename+".png", bbox_inches='tight')
         plt.savefig(filename+".eps", format='eps', bbox_inches='tight')
         plt.clf()
@@ -177,15 +176,14 @@ for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
         if not os.path.exists("results/experiment1/plots/"):
             os.makedirs("results/experiment1/plots/")
 
-        max_select_feat = 22
         plt.ylabel("Cost")
         plt.xlabel("Number of selected features")
         plt.ylim(bottom=0.0)
         plt.title(f"Cost for dataset {dataset} and base classifier {key}")
-        plt.legend(loc='lower right')
-        plt.xticks(range(1, max_select_feat), labels=range(1, max_select_feat))
+        plt.legend(loc='best')
+        plt.xticks(range(1, len(plot_data)+1), labels=range(1, len(plot_data)+1))
         plt.grid(True, color="silver", linestyle=":", axis='y')
-        plt.gcf().set_size_inches(6, 4)
+        plt.gcf().set_size_inches(9, 6)
         plt.savefig(filename+".png", bbox_inches='tight')
         plt.savefig(filename+".eps", format='eps', bbox_inches='tight')
         plt.clf()
