@@ -59,7 +59,6 @@ class FeatureSelectionAccuracyCostMultiProblem(Problem):
             f1 = f1.item()
             f2 = f2.item()
             out["F"] = anp.column_stack(np.array([f1, f2]))
-
         # scale_features is a number from 0 to 1
         # if number = 1-scale_features,
         # scale_features = 1 means all features

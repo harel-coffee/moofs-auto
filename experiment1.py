@@ -1,5 +1,7 @@
 import os
 import numpy as np
+import pandas as pd
+import matplotlib as plt
 
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
@@ -12,11 +14,14 @@ from sklearn.base import clone
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.feature_selection import chi2
 
-from utils import load_dataset, find_datasets, load_feature_costs, plotting_pareto
+from utils import load_dataset, find_datasets, load_feature_costs
 from methods.fsclf import FeatueSelectionClf
 from methods.gaaccclf import GeneticAlgorithmAccuracyClf
 from methods.gaacccost import GAAccCost
 from methods.nsgaacccost import NSGAAccCost
+
+
+import seaborn as sns
 
 
 # !!! Move specific datasets into dataset folder !!!
@@ -26,8 +31,8 @@ n_datasets = len(list(enumerate(find_datasets(DATASETS_DIR))))
 base_classifiers = {
     # 'GNB': GaussianNB(),
     # 'SVM': SVC(),
-    'kNN': KNeighborsClassifier(),
-    # 'CART': DecisionTreeClassifier(random_state=10),
+    # 'kNN': KNeighborsClassifier(),
+    'CART': DecisionTreeClassifier(random_state=10),
 }
 
 test_size = 0.2
@@ -39,6 +44,7 @@ n_folds = n_splits * n_repeats
 pareto_decision_a = 'accuracy'
 pareto_decision_c = 'cost'
 pareto_decision_p = 'promethee'
+criteria_weights = np.array([0.5, 0.5])
 n_rows_p = 50
 
 # Dodaj zabezpieczenie, że jeśli coś jest już policzone, to żeby się nie liczyło od nowa
@@ -59,6 +65,13 @@ for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
     scale_features += 0.01
 
     X, y = load_dataset(dataset, return_X_y=True, storage=DATASETS_DIR)
+
+    # Pair plot shows placement of classes according to features
+    # sns.set_theme(style="whitegrid")
+    # df = pd.DataFrame({'classes': y[:], 'Preg': X[:, 0], 'Plas': X[:, 1], 'Pres': X[:, 2], 'Skin': X[:, 3], 'Insu': X[:, 4], 'Mass': X[:, 5], 'Pedi': X[:, 6], 'Age': X[:, 7]})
+    # fig = sns.pairplot(df, hue="classes")
+    # fig.savefig("results/output.png")
+
     # Normalization - transform data to [0, 1]
     X = MinMaxScaler().fit_transform(X, y)
 
@@ -66,6 +79,11 @@ for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
     feature_costs = load_feature_costs(dataset)
     # Normalization
     feature_costs_norm = [(float(i)-min(feature_costs))/(max(feature_costs)-min(feature_costs)) for i in feature_costs]
+    feature_costs_norm_after = []
+    for f_norm in feature_costs_norm:
+        f_norm += 0.01
+        feature_costs_norm_after.append(f_norm)
+    print(feature_costs_norm_after)
 
     for scale in scale_features:
         methods = {}
@@ -75,8 +93,8 @@ for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
             # methods['GAaccCost_{}'.format(key)] = GAAccCost(base, scale, test_size)
 
             # methods['NSGAaccCost_acc_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_a)
-            methods['NSGAaccCost_cost_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_c)
-            # methods['NSGAaccCost_promethee_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_p)
+            # methods['NSGAaccCost_cost_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_c)
+            methods['NSGAaccCost_promethee_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_p, criteria_weights)
 
         selected_feature_number = int(scale * feature_number)
         print(f"Number of selected features: {selected_feature_number}")
@@ -91,7 +109,7 @@ for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
             for clf_id, clf_name in enumerate(methods):
                 print(f"Fold number: {fold_id}, clf: {clf_name}")
                 clf = clone(methods[clf_name])
-                clf.feature_costs = feature_costs_norm
+                clf.feature_costs = feature_costs_norm_after
                 clf.fit(X_train, y_train)
                 y_pred = clf.predict(X_test)
                 scores[clf_id, fold_id] = accuracy_score(y_test, y_pred)
@@ -101,7 +119,7 @@ for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
                     for sol_id, solution in enumerate(clf.solutions):
                         for s_id, s in enumerate(solution):
                             pareto_solutions[fold_id, sol_id, s_id] = s
-
+        print(scores)
         # Save results accuracy and total cost of selected features to csv
         for clf_id, clf_name in enumerate(methods):
             filename_acc = "results/experiment1/accuracy/%s/f%d/%s.csv" % (dataset, selected_feature_number, clf_name)

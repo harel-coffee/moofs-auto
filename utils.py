@@ -8,8 +8,6 @@ from sklearn.utils import Bunch
 from sklearn.preprocessing import LabelEncoder
 from sklearn.impute import SimpleImputer
 
-from pymoo.visualization.scatter import Scatter
-
 
 STORAGE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "datasets")
 

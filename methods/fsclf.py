@@ -20,6 +20,8 @@ class FeatueSelectionClf(BaseEstimator, ClassifierMixin):
         KBest = SelectKBest(self.score_function, self.k)
         KBest = KBest.fit(X, y)
         self.selected_features = KBest.get_support()
+        # self.selected_features = [False, False, False, False, False, False, False, True]
+        # print(X[:, self.selected_features])
         self.estimator = self.base_estimator.fit(X[:, self.selected_features], y)
         return self
 
