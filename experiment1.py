@@ -29,9 +29,9 @@ DATASETS_DIR = os.path.join(os.path.realpath(os.path.dirname(__file__)), 'datase
 n_datasets = len(list(enumerate(find_datasets(DATASETS_DIR))))
 
 base_classifiers = {
-    # 'GNB': GaussianNB(),
-    # 'SVM': SVC(),
-    # 'kNN': KNeighborsClassifier(),
+    'GNB': GaussianNB(),
+    'SVM': SVC(),
+    'kNN': KNeighborsClassifier(),
     'CART': DecisionTreeClassifier(random_state=10),
 }
 
@@ -44,7 +44,8 @@ n_folds = n_splits * n_repeats
 pareto_decision_a = 'accuracy'
 pareto_decision_c = 'cost'
 pareto_decision_p = 'promethee'
-criteria_weights = np.array([0.5, 0.5])
+# first weight for accuracy, second for cost
+criteria_weights = np.array([0.4, 0.6])
 n_rows_p = 50
 
 # Dodaj zabezpieczenie, że jeśli coś jest już policzone, to żeby się nie liczyło od nowa
@@ -90,10 +91,10 @@ for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
         for key, base in base_classifiers.items():
             # methods['FS_{}'.format(key)] = FeatueSelectionClf(base, chi2, scale)
             # methods['GAacc_{}'.format(key)] = GeneticAlgorithmAccuracyClf(base, scale, test_size)
-            # methods['GAaccCost_{}'.format(key)] = GAAccCost(base, scale, test_size)
+            methods['GAaccCost_{}'.format(key)] = GAAccCost(base, scale, test_size)
 
-            # methods['NSGAaccCost_acc_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_a)
-            # methods['NSGAaccCost_cost_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_c)
+            methods['NSGAaccCost_acc_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_a)
+            methods['NSGAaccCost_cost_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_c)
             methods['NSGAaccCost_promethee_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_p, criteria_weights)
 
         selected_feature_number = int(scale * feature_number)
@@ -142,6 +143,14 @@ for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
                     np.savetxt(fname=filename_pareto, fmt="%f", X=pareto_solutions[fold_id, sol_id, :])
 
 
-# Na serwerze liczy się teraz:
-# tylko dla thyroid
-# metody: FS, GA ac, GA cost,
+# Popraw wszystkie badania dla metod zwiazanych z kosztami!
+
+
+# Badania na serwerze in progress:
+# metody:
+# methods['GAaccCost_{}'.format(key)] = GAAccCost(base, scale, test_size)
+# methods['NSGAaccCost_acc_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_a)
+# methods['NSGAaccCost_cost_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_c)
+# methods['NSGAaccCost_promethee_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_p, criteria_weights)
+
+# dataset: wszystkie bez thyroid

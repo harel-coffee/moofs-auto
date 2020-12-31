@@ -69,15 +69,9 @@ class NSGAAccCost(BaseEstimator, ClassifierMixin):
                 # u - usual
                 self.preference_function = (['u', 'u'])
                 net_flows = promethee_function(self.solutions, self.criteria_min_max, self.preference_function, self.criteria_weights)
-                print("net flows", net_flows)
-
-                # tu dokoncz wybranie cech, ranking rozwiazan pareto
+                # Ranking of the net flows
                 index = np.argmax(net_flows, axis=0)
-                # print("sols", self.solutions)
-                # print("i", index)
                 self.selected_features = res.X[index]
-                # print("X", res.X)
-                # print("X c", res.X[index])
 
         self.estimator = self.base_estimator.fit(X[:, self.selected_features], y)
         return self
@@ -96,11 +90,10 @@ class NSGAAccCost(BaseEstimator, ClassifierMixin):
         return total_cost
 
 
-# Calculation net flows to promethee method
+# Calculation uni weighted to promethee method
 def uni_cal(solutions_col, criteria_min_max, preference_function, criteria_weights):
     uni = np.zeros((solutions_col.shape[0], solutions_col.shape[0]))
     uni_weighted = np.zeros((solutions_col.shape[0], solutions_col.shape[0]))
-    # print("sols", solutions_col)
     for i in range(np.size(uni, 0)):
         for j in range(np.size(uni, 1)):
             if i == j:
@@ -108,66 +101,40 @@ def uni_cal(solutions_col, criteria_min_max, preference_function, criteria_weigh
             # Usual preference function
             elif preference_function == 'u':
                 diff = solutions_col[j] - solutions_col[i]
-                # print("diff", diff)
                 if diff > 0:
                     uni[i, j] = 1
                 else:
                     uni[i, j] = 0
             uni_weighted[i][j] = criteria_weights * uni[i, j]
-
-    # print("UNI", uni)
-    # print(uni_weighted)
     # criteria min (0) or max (1) optimization array
     if criteria_min_max == 0:
         uni_weighted = uni_weighted
     elif criteria_min_max == 1:
         uni_weighted = uni_weighted.T
-
-    # n_solutions = uni_weighted.shape[0] - 1
-    # # Sum by rows
-    # pos_flows = []
-    # pos_sum = np.sum(uni_weighted, axis=1)
-    # for element in pos_sum:
-    #     pos_flows.append(element/n_solutions)
-    # # Sum by columns
-    # neg_flows = []
-    # neg_sum = np.sum(uni_weighted, axis=0)
-    # for element in neg_sum:
-    #     neg_flows.append(element/n_solutions)
-    # # Calculate net_flows
-    # net_flows = []
-    # for i in range(len(pos_flows)):
-    #     net_flows.append(pos_flows[i] - neg_flows[i])
-    # return net_flows
-
     return uni_weighted
 
 
 # promethee method to choose one solution from the pareto front
 def promethee_function(solutions, criteria_min_max, preference_function, criteria_weights):
     weighted_unis = []
-    total_net_flows = []
     for i in range(solutions.shape[1]):
         weighted_uni = uni_cal(solutions[:, i:i + 1], criteria_min_max[i], preference_function[i], criteria_weights[i])
         weighted_unis.append(weighted_uni)
-
     agregated_preference = []
     uni_acc = weighted_unis[0]
     uni_cost = weighted_unis[1]
-    # print(weighted_unis)
+    # Combine two criteria into agregated_preference
     for (item1, item2) in zip(uni_acc, uni_cost):
-        # print("SUM",(item1 + item2))
-        agregated_preference.append((item1 + item2)/2)
+        agregated_preference.append((item1 + item2)/sum(criteria_weights))
     agregated_preference = np.array(agregated_preference)
-    # print("PREF.", agregated_preference)
 
     n_solutions = agregated_preference.shape[0] - 1
-    # Sum by rows
+    # Sum by rows - positive flow
     pos_flows = []
     pos_sum = np.sum(agregated_preference, axis=1)
     for element in pos_sum:
         pos_flows.append(element/n_solutions)
-    # Sum by columns
+    # Sum by columns - negative flow
     neg_flows = []
     neg_sum = np.sum(agregated_preference, axis=0)
     for element in neg_sum:
@@ -176,19 +143,4 @@ def promethee_function(solutions, criteria_min_max, preference_function, criteri
     net_flows = []
     for i in range(len(pos_flows)):
         net_flows.append(pos_flows[i] - neg_flows[i])
-
-    # print(pos_flows, neg_flows, net_flows)
-    # !!! Wszystkie net_flows są równe zero, więc chyba cos jeszcze zle sie liczy ?
     return net_flows
-
-
-    # print(weighted_uni_net_flows)
-    # print(np.size(weighted_uni_net_flows, 1))
-    # # net flows
-    # for i in range(np.size(weighted_uni_net_flows, 1)):
-    #     k = 0
-    #     for j in range(np.size(weighted_uni_net_flows, 0)):
-    #         k = k + round(weighted_uni_net_flows[j][i], 5)
-    #     total_net_flows.append(k)
-    # print(np.around(total_net_flows, decimals=4))
-    # return np.around(total_net_flows, decimals=4)

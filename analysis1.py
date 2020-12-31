@@ -21,20 +21,20 @@ n_datasets = len(list(enumerate(find_datasets(DATASETS_DIR))))
 
 # !!! Change before run !!!
 base_classifiers = {
-    # 'GNB': GaussianNB(),
-    # 'SVM': SVC(),
-    # 'kNN': KNeighborsClassifier(),
+    'GNB': GaussianNB(),
+    'SVM': SVC(),
+    'kNN': KNeighborsClassifier(),
     'CART': DecisionTreeClassifier(random_state=10),
 }
 
 # !!! Change before run !!!
 methods_alias = [
                 "FS",
-                # "GA_a",
-                # "GA_ac",
-                # "NSGA_a",
-                # "NSGA_c",
-                # "NSGA_p"
+                "GA_a",
+                "GA_ac",
+                "NSGA_a",
+                "NSGA_c",
+                "NSGA_p"
 ]
 
 test_size = 0.2
@@ -66,11 +66,11 @@ for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
 
             # !!! Change before run !!!
             methods['FS_{}'.format(key)] = FeatueSelectionClf(base, chi2, scale)
-            # methods['GAacc_{}'.format(key)] = GeneticAlgorithmAccuracyClf(base, scale, test_size)
-            # methods['GAaccCost_{}'.format(key)] = GAAccCost(base, scale, test_size)
-            # methods['NSGAaccCost_acc_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_a)
-            # methods['NSGAaccCost_cost_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_c)
-            # methods['NSGAaccCost_promethee_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_p)
+            methods['GAacc_{}'.format(key)] = GeneticAlgorithmAccuracyClf(base, scale, test_size)
+            methods['GAaccCost_{}'.format(key)] = GAAccCost(base, scale, test_size)
+            methods['NSGAaccCost_acc_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_a)
+            methods['NSGAaccCost_cost_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_c)
+            methods['NSGAaccCost_promethee_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_p)
         for clf_id, clf_name in enumerate(methods):
             try:
                 filename_acc = "results/experiment1/accuracy/%s/f%d/%s.csv" % (dataset, selected_feature_number, clf_name)
@@ -92,74 +92,75 @@ for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
 
 
 # Bar charts
-# methods_labels = methods_alias * len(base_classifiers)
-# width = 1/(len(methods_alias)+1)
-# tr = 1/(len(methods_alias)/2)
-# for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
-#     feature_number = len(load_feature_costs(dataset))
-#     scale_features = np.linspace(1/feature_number, 1.0, feature_number)
-#     scale_features += 0.01
-#     for key, base in base_classifiers.items():
-#         r = 0
-#         for clf_id, (clf_name, method_label) in enumerate(zip(methods, methods_labels)):
-#             if key in clf_name:
-#                 plot_data = []
-#                 for scale_id, scale in enumerate(scale_features):
-#                     selected_feature_number = int(scale * feature_number)
-#                     plot_data.append(mean_scores[dataset_id, scale_id, clf_id])
-#                 position = list(range(1, len(plot_data)+1))
-#                 # Add plot_data to bars in the chart
-#                 plt.bar([p - tr + width*r for p in position], plot_data, width, edgecolor='white', label=method_label)
-#                 r += 1
-#         # Save plot
-#         filename = "results/experiment1/plots/%s_%s_acc" % (dataset, key)
-#         if not os.path.exists("results/experiment1/plots/"):
-#             os.makedirs("results/experiment1/plots/")
-#
-#         plt.ylabel("Accuracy")
-#         plt.xlabel("Number of selected features")
-#         plt.ylim(bottom=0.0, top=1.0)
-#         plt.title(f"Accuracy for dataset {dataset} and base classifier {key}")
-#         plt.legend(loc='best')
-#         plt.grid(True, color="silver", linestyle=":", axis='y')
-#         plt.xticks(range(1, len(plot_data)+1), labels=range(1, len(plot_data)+1))
-#         plt.gcf().set_size_inches(9, 6)
-#         plt.savefig(filename+".png", bbox_inches='tight')
-#         plt.savefig(filename+".eps", format='eps', bbox_inches='tight')
-#         plt.clf()
-#         plt.close()
-#
-#     for key, base in base_classifiers.items():
-#         r = 0
-#         for clf_id, (clf_name, method_label) in enumerate(zip(methods, methods_labels)):
-#             if key in clf_name:
-#                 plot_data = []
-#                 for scale_id, scale in enumerate(scale_features):
-#                     selected_feature_number = int(scale * feature_number)
-#                     plot_data.append(mean_costs[dataset_id, scale_id, clf_id])
-#                 position = list(range(1, len(plot_data)+1))
-#                 # Add plot_data to bars in the chart
-#                 plt.bar([p - tr + width*r for p in position], plot_data, width, edgecolor='white', label=method_label)
-#                 r += 1
-#         # Save plot
-#         filename = "results/experiment1/plots/%s_%s_cost" % (dataset, key)
-#         if not os.path.exists("results/experiment1/plots/"):
-#             os.makedirs("results/experiment1/plots/")
-#
-#         plt.ylabel("Cost")
-#         plt.xlabel("Number of selected features")
-#         plt.ylim(bottom=0.0)
-#         plt.title(f"Cost for dataset {dataset} and base classifier {key}")
-#         plt.legend(loc='best')
-#         plt.xticks(range(1, len(plot_data)+1), labels=range(1, len(plot_data)+1))
-#         plt.grid(True, color="silver", linestyle=":", axis='y')
-#         plt.gcf().set_size_inches(9, 6)
-#         plt.savefig(filename+".png", bbox_inches='tight')
-#         plt.savefig(filename+".eps", format='eps', bbox_inches='tight')
-#         plt.clf()
-#         plt.close()
-#
-# # Plot pareto front scatter
+methods_labels = methods_alias * len(base_classifiers)
+width = 1/(len(methods_alias)+1)
+tr = 1/(len(methods_alias)/2)
+for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
+    feature_number = len(load_feature_costs(dataset))
+    scale_features = np.linspace(1/feature_number, 1.0, feature_number)
+    scale_features += 0.01
+    for key, base in base_classifiers.items():
+        r = 0
+        for clf_id, (clf_name, method_label) in enumerate(zip(methods, methods_labels)):
+            if key in clf_name:
+                plot_data = []
+                for scale_id, scale in enumerate(scale_features):
+                    selected_feature_number = int(scale * feature_number)
+                    plot_data.append(mean_scores[dataset_id, scale_id, clf_id])
+                position = list(range(1, len(plot_data)+1))
+                # Add plot_data to bars in the chart
+                plt.bar([p - tr + width*r for p in position], plot_data, width, edgecolor='white', label=method_label)
+                r += 1
+        # Save plot
+        filename = "results/experiment1/plots/%s_%s_acc" % (dataset, key)
+        if not os.path.exists("results/experiment1/plots/"):
+            os.makedirs("results/experiment1/plots/")
+
+        plt.ylabel("Accuracy")
+        plt.xlabel("Number of selected features")
+        plt.ylim(bottom=0.0, top=1.0)
+        plt.title(f"Accuracy for dataset {dataset} and base classifier {key}")
+        plt.legend(loc='best')
+        plt.grid(True, color="silver", linestyle=":", axis='y')
+        plt.xticks(range(1, len(plot_data)+1), labels=range(1, len(plot_data)+1))
+        plt.gcf().set_size_inches(9, 6)
+        plt.savefig(filename+".png", bbox_inches='tight')
+        plt.savefig(filename+".eps", format='eps', bbox_inches='tight')
+        plt.clf()
+        plt.close()
+
+    for key, base in base_classifiers.items():
+        r = 0
+        for clf_id, (clf_name, method_label) in enumerate(zip(methods, methods_labels)):
+            if key in clf_name:
+                plot_data = []
+                for scale_id, scale in enumerate(scale_features):
+                    selected_feature_number = int(scale * feature_number)
+                    plot_data.append(mean_costs[dataset_id, scale_id, clf_id])
+                position = list(range(1, len(plot_data)+1))
+                # Add plot_data to bars in the chart
+                plt.bar([p - tr + width*r for p in position], plot_data, width, edgecolor='white', label=method_label)
+                r += 1
+        # Save plot
+        filename = "results/experiment1/plots/%s_%s_cost" % (dataset, key)
+        if not os.path.exists("results/experiment1/plots/"):
+            os.makedirs("results/experiment1/plots/")
+
+        plt.ylabel("Cost")
+        plt.xlabel("Number of selected features")
+        plt.ylim(bottom=0.0)
+        plt.title(f"Cost for dataset {dataset} and base classifier {key}")
+        plt.legend(loc='best')
+        plt.xticks(range(1, len(plot_data)+1), labels=range(1, len(plot_data)+1))
+        plt.grid(True, color="silver", linestyle=":", axis='y')
+        plt.gcf().set_size_inches(9, 6)
+        plt.savefig(filename+".png", bbox_inches='tight')
+        plt.savefig(filename+".eps", format='eps', bbox_inches='tight')
+        plt.clf()
+        plt.close()
+
+# #############################################################################
+# Plot pareto front scatter
 # for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
 #     for scale_id, scale in enumerate(scale_features):
 #         selected_feature_number = int(scale * feature_number)
@@ -198,6 +199,8 @@ for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
 #             plt.close()
 
 
+# DON'T RUN
+# #############################################################################
 # Latex tables not working for this case
 # n_features = []
 # scale_features = []
