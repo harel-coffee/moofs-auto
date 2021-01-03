@@ -30,9 +30,9 @@ n_datasets = len(list(enumerate(find_datasets(DATASETS_DIR))))
 
 base_classifiers = {
     'GNB': GaussianNB(),
-    'SVM': SVC(),
-    'kNN': KNeighborsClassifier(),
-    'CART': DecisionTreeClassifier(random_state=10),
+    # 'SVM': SVC(),
+    # 'kNN': KNeighborsClassifier(),
+    # 'CART': DecisionTreeClassifier(random_state=10),
 }
 
 test_size = 0.2
@@ -46,7 +46,7 @@ pareto_decision_c = 'cost'
 pareto_decision_p = 'promethee'
 # first weight for accuracy, second for cost
 criteria_weights = np.array([0.4, 0.6])
-n_rows_p = 50
+n_rows_p = 100
 
 # Dodaj zabezpieczenie, że jeśli coś jest już policzone, to żeby się nie liczyło od nowa
 
@@ -153,4 +153,5 @@ for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
 # methods['NSGAaccCost_cost_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_c)
 # methods['NSGAaccCost_promethee_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_p, criteria_weights)
 
-# dataset: wszystkie bez thyroid
+# dataset: wszystkie bez thyroid - DONE
+# thyroid in progress
