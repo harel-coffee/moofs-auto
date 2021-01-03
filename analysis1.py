@@ -115,14 +115,13 @@ def bar_chart():
                 if key in clf_name:
                     plot_data = []
                     for scale_id, scale in enumerate(scale_features):
-                        selected_feature_number = int(scale * feature_number)
                         plot_data.append(mean_scores[dataset_id, scale_id, clf_id])
                     position = list(range(1, len(plot_data)+1))
                     # Add plot_data to bars in the chart
                     plt.bar([p - tr + width*r for p in position], plot_data, width, edgecolor='white', label=method_label)
                     r += 1
             # Save plot
-            filename = "results/experiment1/plots/%s_%s_acc" % (dataset, key)
+            filename = "results/experiment1/plots/bar_%s_%s_acc" % (dataset, key)
             if not os.path.exists("results/experiment1/plots/"):
                 os.makedirs("results/experiment1/plots/")
 
@@ -145,14 +144,13 @@ def bar_chart():
                 if key in clf_name:
                     plot_data = []
                     for scale_id, scale in enumerate(scale_features):
-                        selected_feature_number = int(scale * feature_number)
                         plot_data.append(mean_costs[dataset_id, scale_id, clf_id])
                     position = list(range(1, len(plot_data)+1))
                     # Add plot_data to bars in the chart
                     plt.bar([p - tr + width*r for p in position], plot_data, width, edgecolor='white', label=method_label)
                     r += 1
             # Save plot
-            filename = "results/experiment1/plots/%s_%s_cost" % (dataset, key)
+            filename = "results/experiment1/plots/bar_%s_%s_cost" % (dataset, key)
             if not os.path.exists("results/experiment1/plots/"):
                 os.makedirs("results/experiment1/plots/")
 
@@ -171,7 +169,8 @@ def bar_chart():
 
 
 # Plotting bar chart
-# bar_chart()
+bar_chart()
+
 
 # Micro chart function
 def micro_chart():
@@ -215,7 +214,7 @@ def micro_chart():
                     axs2.set_ylabel("Cost", color="tab:blue", fontsize=8)
 
         # Save plot
-        filename = "results/experiment1/plot_micro/%s" % (dataset)
+        filename = "results/experiment1/plot_micro/micro_%s" % (dataset)
         if not os.path.exists("results/experiment1/plot_micro/"):
             os.makedirs("results/experiment1/plot_micro/")
         plt.suptitle(f"Dataset {dataset}")
@@ -228,7 +227,7 @@ def micro_chart():
 
 
 # Plotting micro charts
-micro_chart()
+# micro_chart()
 
 
 # Plot pareto front scatter function
