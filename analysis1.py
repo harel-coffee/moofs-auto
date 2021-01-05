@@ -36,18 +36,18 @@ base_classifiers_alias = [
 # !!! Change before run !!!
 methods_alias = [
                 "FS",
-                "GA_a",
-                "GA_ac",
-                "NSGA_a",
-                "NSGA_c",
-                "NSGA_p"
+                "GA-a",
+                "GA-ac",
+                "NSGA-a",
+                "NSGA-c",
+                "NSGA-p"
 ]
 
 test_size = 0.2
 n_folds = 10
 n_methods = len(methods_alias) * len(base_classifiers)
 methods_labels = methods_alias * len(base_classifiers)
-# Number 21 is a number of feature's scale
+# Number 21 is a number of max features among dataset
 mean_scores = np.zeros((n_datasets, 21, n_methods))
 stds = np.zeros((n_datasets, 21, n_methods))
 mean_costs = np.zeros((n_datasets, 21, n_methods))
@@ -96,6 +96,7 @@ for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
             except IOError:
                 print("File", filename_acc, "not found")
                 print("File", filename_cost, "not found")
+# print(mean_scores)
 
 
 # Plotting
@@ -121,15 +122,15 @@ def bar_chart():
                     plt.bar([p - tr + width*r for p in position], plot_data, width, edgecolor='white', label=method_label)
                     r += 1
             # Save plot
-            filename = "results/experiment1/plots/bar_%s_%s_acc" % (dataset, key)
-            if not os.path.exists("results/experiment1/plots/"):
-                os.makedirs("results/experiment1/plots/")
+            filename = "results/experiment1/plot_bar/bar_%s_%s_acc" % (dataset, key)
+            if not os.path.exists("results/experiment1/plot_bar/"):
+                os.makedirs("results/experiment1/plot_bar/")
 
             plt.ylabel("Accuracy")
             plt.xlabel("Number of selected features")
             plt.ylim(bottom=0.0, top=1.0)
             plt.title(f"Accuracy for dataset {dataset} and base classifier {key}")
-            plt.legend(loc='best')
+            plt.legend(loc='lower right')
             plt.grid(True, color="silver", linestyle=":", axis='y')
             plt.xticks(range(1, len(plot_data)+1), labels=range(1, len(plot_data)+1))
             plt.gcf().set_size_inches(9, 6)
@@ -150,9 +151,9 @@ def bar_chart():
                     plt.bar([p - tr + width*r for p in position], plot_data, width, edgecolor='white', label=method_label)
                     r += 1
             # Save plot
-            filename = "results/experiment1/plots/bar_%s_%s_cost" % (dataset, key)
-            if not os.path.exists("results/experiment1/plots/"):
-                os.makedirs("results/experiment1/plots/")
+            filename = "results/experiment1/plot_bar/bar_%s_%s_cost" % (dataset, key)
+            if not os.path.exists("results/experiment1/plot_bar/"):
+                os.makedirs("results/experiment1/plot_bar/")
 
             plt.ylabel("Cost")
             plt.xlabel("Number of selected features")
@@ -172,18 +173,32 @@ def bar_chart():
 bar_chart()
 
 
+def total_norm_feat_cost(dataset_name):
+    # Get feature costs
+    feature_costs = load_feature_costs(dataset_name)
+    # Normalization
+    feature_costs_norm = [(float(i)-min(feature_costs))/(max(feature_costs)-min(feature_costs)) for i in feature_costs]
+    feature_costs_norm_after = []
+    for f_norm in feature_costs_norm:
+        f_norm += 0.01
+        feature_costs_norm_after.append(f_norm)
+    return sum(feature_costs_norm_after)
+
+
 # Micro chart function
 def micro_chart():
     for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
         print(dataset)
+        total_norm_cost = total_norm_feat_cost(dataset)
         feature_number = len(load_feature_costs(dataset))
         scale_features = np.linspace(1/feature_number, 1.0, feature_number)
         scale_features += 0.01
-        figsize = (20, 8)
-        cols = len(methods_alias)
-        rows = len(base_classifiers)
+        figsize = (10, 15)
+        cols = int(len(methods_alias)/2)
+        rows = len(base_classifiers)*2
         axs = plt.figure(figsize=figsize, constrained_layout=True).subplots(rows, cols, sharex=True, sharey=True)
         axs = axs.flatten()
+        axs2 = [0] * len(axs)
 
         for clf_id, (clf_name, method_label) in enumerate(zip(methods, methods_labels)):
             for b_clf_id, b_clf_a in enumerate(base_classifiers_alias):
@@ -194,32 +209,30 @@ def micro_chart():
                         plot_data_acc.append(mean_scores[dataset_id, scale_id, clf_id])
                         plot_data_cost.append(mean_costs[dataset_id, scale_id, clf_id])
                     position = list(range(1, len(plot_data_acc)+1))
-                    # print("ACC", plot_data_acc, clf_name)
 
-                    # For 2D plot array - use if other layout will be needed, but in that form it doesn't work
-                    # axs[i, j].plot(position, plot_data_acc, color="tab:orange")
-                    # axs[i, j].set_ylabel("Accuracy", color="tab:orange", fontsize=8)
-                    # axs[i, j].set_title(clf_name, fontsize=8)
-                    # print(i, j)
-                    # i += 1
-                    # j += 1
-
-                    axs[clf_id].plot(position, plot_data_acc, color="tab:orange")
-                    axs[clf_id].set_ylabel("Accuracy", color="tab:orange", fontsize=8)
-                    axs[clf_id].set_xlabel("Features", fontsize=8)
-                    axs[clf_id].set_title(clf_name, fontsize=8)
+                    tittle_subfig = method_label + " " + b_clf_a
+                    axs[clf_id].plot(position, plot_data_acc, color="tab:orange", linewidth=2.5)
+                    axs[clf_id].set_title(tittle_subfig, fontsize=12)
                     # make a plot with different y-axis using second axis object
-                    axs2 = axs[clf_id].twinx()
-                    axs2.plot(position, plot_data_cost, color="tab:blue")
-                    axs2.set_ylabel("Cost", color="tab:blue", fontsize=8)
+                    axs2[clf_id] = axs[clf_id].twinx()
+                    axs2[clf_id].plot(position, plot_data_cost, color="tab:blue", linewidth=2.5)
+                    plt.setp(axs2[clf_id], yticks=range(0, int(total_norm_cost + 2)))
 
         # Save plot
         filename = "results/experiment1/plot_micro/micro_%s" % (dataset)
         if not os.path.exists("results/experiment1/plot_micro/"):
             os.makedirs("results/experiment1/plot_micro/")
-        plt.suptitle(f"Dataset {dataset}")
-        # plt.xlabel("Features' no.", fontsize=8)
-        # plt.ylabel("Accuracy", color="red", fontsize=8)
+        plt.suptitle(f"Dataset {dataset}", fontweight='bold')
+        for i in range(0, rows*cols, 3):
+            axs[i].set_ylabel("Accuracy", color="tab:orange", fontsize=12, fontweight='bold')
+        for i in range(2, rows*cols, 3):
+            axs2[i].set_ylabel("Cost", color="tab:blue", fontsize=12, fontweight='bold')
+        for i in range(21, rows*cols):
+            axs[i].set_xlabel("Features", fontsize=12)
+        if feature_number > 10:
+            plt.xticks(range(1, int(feature_number + 1), 2), labels=range(1, int(feature_number + 1), 2))
+        else:
+            plt.xticks(range(1, int(feature_number + 1), 1), labels=range(1, int(feature_number + 1), 1))
         plt.savefig(filename+".png", bbox_inches='tight')
         plt.savefig(filename+".eps", format='eps', bbox_inches='tight')
         plt.clf()
@@ -227,7 +240,7 @@ def micro_chart():
 
 
 # Plotting micro charts
-# micro_chart()
+micro_chart()
 
 
 # Plot pareto front scatter function
@@ -259,11 +272,11 @@ def scatter_pareto_chart():
                 x = np.array(x)
                 y = np.array(y)
                 plt.scatter(x, y, color='black')
-                plt.title("Objective Space")
-                plt.xlabel('Accuracy')
-                plt.ylabel('Cost')
+                plt.title("Objective Space", fontsize=12)
+                plt.xlabel('Accuracy', fontsize=12)
+                plt.ylabel('Cost', fontsize=12)
                 plt.grid(True, color="silver", linestyle=":", axis='both')
-                plt.gcf().set_size_inches(9, 6)
+                plt.gcf().set_size_inches(6, 3)
                 plt.savefig(filename_pareto_chart+".png", bbox_inches='tight')
                 plt.savefig(filename_pareto_chart+".eps", format='eps', bbox_inches='tight')
                 plt.clf()
@@ -272,75 +285,3 @@ def scatter_pareto_chart():
 
 # Plot pareto front scatter
 # scatter_pareto_chart()
-
-
-
-
-
-
-
-
-
-# DON'T RUN
-# #############################################################################
-# Latex tables not working for this case
-# n_features = []
-# scale_features = []
-# for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
-#     n_f = len(load_feature_costs(dataset))
-#     n_features.append(n_f)
-#     s_f = np.linspace(1/n_f, 1.0, n_f)
-#     s_f += 0.01
-#     scale_features.append(s_f)
-
-# for key in base_classifiers:
-#     for scale_id, scale in enumerate(scale_features[0]):
-#         acc_contents = [[None for _ in range(len(methods_alias))] for _ in range(n_datasets)]
-#         cost_contents = [[None for _ in range(len(methods_alias))] for _ in range(n_datasets)]
-#         for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
-#             selected_feature_number = int(scale * n_features[dataset_id])
-#             i = 0
-#             if dataset_id == 0:
-#                 for clf_id, clf_name in enumerate(methods):
-#                     if key in clf_name:
-#                         # Accuracy
-#                         ms = mean_scores[dataset_id, scale_id, clf_id].tolist()
-#                         std = stds[dataset_id, scale_id, clf_id].tolist()
-#                         string = str(float("{:.2f}".format(ms))) + " +- " + str(float("{:.2f}".format(std)))
-#                         acc_contents[dataset_id][i] = string
-#
-#                         # Cost
-#                         mc = mean_costs[dataset_id, scale_id, clf_id].tolist()
-#                         value = float("{:.2f}".format(mc))
-#                         cost_contents[dataset_id][i] = value
-#                         i += 1
-#
-#             if (dataset_id > 0) and (selected_feature_number <= n_features[dataset_id-1]):
-#                 for clf_id, clf_name in enumerate(methods):
-#                     if key in clf_name:
-#                         # Accuracy
-#                         ms = mean_scores[dataset_id, scale_id, clf_id].tolist()
-#                         std = stds[dataset_id, scale_id, clf_id].tolist()
-#                         string = str(float("{:.2f}".format(ms))) + " +- " + str(float("{:.2f}".format(std)))
-#                         acc_contents[dataset_id][i] = string
-#
-#                         # Cost
-#                         mc = mean_costs[dataset_id, scale_id, clf_id].tolist()
-#                         value = float("{:.2f}".format(mc))
-#                         cost_contents[dataset_id][i] = value
-#                         i += 1
-#                 print(selected_feature_number)
-#                 if not os.path.exists("results/experiment1/tables/"):
-#                     os.makedirs("results/experiment1/tables/")
-#                 acc_df = pd.DataFrame(data=acc_contents, index=datasets, columns=methods_alias)
-#                 print("\nACCURACY:\n", acc_df)
-#                 filename_acc = "results/experiment1/tables/f%d_%s_acc.tex" % (selected_feature_number, key)
-#                 with open(filename_acc, 'w') as f:
-#                     f.write(acc_df.to_latex())
-#
-#                 cost_df = pd.DataFrame(data=cost_contents, index=datasets, columns=methods_alias)
-#                 print("\nCOST:\n", cost_df)
-#                 filename_cost = "results/experiment1/tables/f%d_%s_cost.tex" % (selected_feature_number, key)
-#                 with open(filename_cost, 'w') as f:
-#                     f.write(cost_df.to_latex())
-# base_clf_alias = np.unique(base_clf_alias)
