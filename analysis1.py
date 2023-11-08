@@ -9,10 +9,10 @@ from sklearn.svm import SVC
 from sklearn.feature_selection import chi2
 
 from utils import find_datasets, load_feature_costs
-from methods.fsclf import FeatueSelectionClf
-from methods.gaaccclf import GeneticAlgorithmAccuracyClf
-from methods.gaacccost import GAAccCost
-from methods.nsgaacccost import NSGAAccCost
+# from methods.fsclf import FeatueSelectionClf
+# from methods.gaaccclf import GeneticAlgorithmAccuracyClf
+# from methods.gaacccost import GAAccCost
+# from methods.nsgaacccost import NSGAAccCost
 
 
 DATASETS_DIR = os.path.join(os.path.realpath(os.path.dirname(__file__)), 'datasets')
@@ -71,12 +71,20 @@ for dataset_id, dataset in enumerate(find_datasets(DATASETS_DIR)):
         for key, base in base_classifiers.items():
 
             # !!! Change before run !!!
-            methods['FS_{}'.format(key)] = FeatueSelectionClf(base, chi2, scale)
-            methods['GAacc_{}'.format(key)] = GeneticAlgorithmAccuracyClf(base, scale, test_size)
-            methods['GAaccCost_{}'.format(key)] = GAAccCost(base, scale, test_size)
-            methods['NSGAaccCost_acc_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_a)
-            methods['NSGAaccCost_cost_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_c)
-            methods['NSGAaccCost_promethee_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_p)
+            # old version of pymoo
+            # methods['FS_{}'.format(key)] = FeatueSelectionClf(base, chi2, scale)
+            # methods['GAacc_{}'.format(key)] = GeneticAlgorithmAccuracyClf(base, scale, test_size)
+            # methods['GAaccCost_{}'.format(key)] = GAAccCost(base, scale, test_size)
+            # methods['NSGAaccCost_acc_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_a)
+            # methods['NSGAaccCost_cost_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_c)
+            # methods['NSGAaccCost_promethee_{}'.format(key)] = NSGAAccCost(base, scale, test_size, pareto_decision_p)
+
+            methods['FS_{}'.format(key)] = 0
+            methods['GAacc_{}'.format(key)] = 0
+            methods['GAaccCost_{}'.format(key)] = 0
+            methods['NSGAaccCost_acc_{}'.format(key)] = 0
+            methods['NSGAaccCost_cost_{}'.format(key)] = 0
+            methods['NSGAaccCost_promethee_{}'.format(key)] = 0
 
         for clf_id, clf_name in enumerate(methods):
             try:
@@ -170,7 +178,7 @@ def bar_chart():
 
 
 # Plotting bar chart
-bar_chart()
+# bar_chart()
 
 
 def total_norm_feat_cost(dataset_name):
@@ -210,6 +218,8 @@ def micro_chart():
                         plot_data_cost.append(mean_costs[dataset_id, scale_id, clf_id])
                     position = list(range(1, len(plot_data_acc)+1))
 
+                    if b_clf_a == 'CART':
+                        b_clf_a = 'DT'
                     tittle_subfig = method_label + " " + b_clf_a
                     axs[clf_id].plot(position, plot_data_acc, color="tab:orange", linewidth=2.5)
                     axs[clf_id].set_title(tittle_subfig, fontsize=12)
